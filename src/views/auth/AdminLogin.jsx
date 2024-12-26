@@ -50,7 +50,7 @@ const AdminLogin = () => {
             <div className='w-[350px] text-[#ffffff] p-2'>
                 <div className='bg-[#6f68d1] p-4 rounded-md'>
                     <div className='h-[70px] flex justify-center items-center'>
-                        <img className='w-[180px]' src="http://localhost:3000/images/logo.png" alt="logo-image"/>
+                        <img className='w-[180px]' src={`${window.location.origin}/images/logo.png`} alt="logo-image"/>
                     </div>
 
                     <form onSubmit={submit} action="">
