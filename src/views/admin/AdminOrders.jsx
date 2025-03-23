@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FaAnglesDown } from "react-icons/fa6";
 import { Link } from "react-router-dom";
+import Pagination from "../Pagination";
 
 const AdminOrders = () => {
     const [currentPage, setCurrentPage] = useState(1);
@@ -9,11 +10,11 @@ const AdminOrders = () => {
     const [expandAll, setExpandAll] = useState(false); // Trạng thái mở rộng tất cả đơn hàng con
     const [expandedOrder, setExpandedOrder] = useState(null); // Trạng thái mở rộng đơn hàng tổng cụ thể
 
-    // Dữ liệu mẫu: 2 đơn hàng tổng
+    // Dữ liệu mẫu: 6 đơn hàng tổng để kiểm tra phân trang
     const orders = [
         {
             id: '#1212',
-            price: '1,368,000đ', // Tổng giá của 3 đơn hàng con
+            price: '1,368,000đ',
             paymentStatus: 'Đang chờ',
             orderStatus: 'Đang chờ',
             subOrders: [
@@ -24,12 +25,45 @@ const AdminOrders = () => {
         },
         {
             id: '#1213',
-            price: '912,000đ', // Tổng giá của 2 đơn hàng con
+            price: '912,000đ',
             paymentStatus: 'Đã thanh toán',
             orderStatus: 'Đã giao',
             subOrders: [
                 { id: '#1213-1', price: '456,000đ', paymentStatus: 'Đã thanh toán', orderStatus: 'Đã giao' },
                 { id: '#1213-2', price: '456,000đ', paymentStatus: 'Đã thanh toán', orderStatus: 'Đã giao' },
+            ],
+        },
+        {
+            id: '#1214',
+            price: '500,000đ',
+            paymentStatus: 'Đã thanh toán',
+            orderStatus: 'Đã giao',
+            subOrders: [],
+        },
+        {
+            id: '#1215',
+            price: '700,000đ',
+            paymentStatus: 'Đang chờ',
+            orderStatus: 'Đang xử lý',
+            subOrders: [
+                { id: '#1215-1', price: '700,000đ', paymentStatus: 'Đang chờ', orderStatus: 'Đang xử lý' },
+            ],
+        },
+        {
+            id: '#1216',
+            price: '1,000,000đ',
+            paymentStatus: 'Đã thanh toán',
+            orderStatus: 'Đã giao',
+            subOrders: [],
+        },
+        {
+            id: '#1217',
+            price: '2,000,000đ',
+            paymentStatus: 'Đang chờ',
+            orderStatus: 'Đang chờ',
+            subOrders: [
+                { id: '#1217-1', price: '1,000,000đ', paymentStatus: 'Đang chờ', orderStatus: 'Đang chờ' },
+                { id: '#1217-2', price: '1,000,000đ', paymentStatus: 'Đang chờ', orderStatus: 'Đang chờ' },
             ],
         },
     ];
@@ -46,6 +80,12 @@ const AdminOrders = () => {
         if (expandAll) setExpandAll(false); // Khi mở đơn lẻ, tắt trạng thái mở tất cả
     };
 
+    // Logic phân trang
+    const totalOrders = orders.length; // Tổng số đơn hàng tổng
+    const startIndex = (currentPage - 1) * parPage;
+    const endIndex = startIndex + parPage;
+    const paginatedOrders = orders.slice(startIndex, endIndex); // Lấy đơn hàng cho trang hiện tại
+
     return (
         <div className='px-2 lg:px-7 max-w-full'>
             <div className='w-full p-4 bg-[#dfac3f] rounded-md'>
@@ -57,7 +97,7 @@ const AdminOrders = () => {
                     >
                         <option value="5">5</option>
                         <option value="10">10</option>
-                        <option value="20">20</option>
+                        <option value="15">15</option>
                     </select>
                     <input
                         className='px-4 py-2 w-full sm:w-auto focus:border-indigo-400 outline-none bg-[#fff] border border-slate-700 rounded-md'
@@ -86,7 +126,7 @@ const AdminOrders = () => {
                         </tr>
                         </thead>
                         <tbody>
-                        {orders.map((order) => (
+                        {paginatedOrders.map((order) => (
                             <React.Fragment key={order.id}>
                                 {/* Đơn hàng tổng */}
                                 <tr className='border-b border-slate-700 hover:bg-[#f5d08e]'>
@@ -98,14 +138,18 @@ const AdminOrders = () => {
                                         <Link to='#' className='text-blue-600 hover:underline'>Xem</Link>
                                     </td>
                                     <td className='py-3 px-4 w-[5%] font-bold'>
-                                        <button onClick={() => toggleExpandOrder(order.id)}>
-                                            <FaAnglesDown className={`transition-transform ${expandedOrder === order.id ? 'rotate-180' : ''}`} />
-                                        </button>
+                                        {order.subOrders && order.subOrders.length > 0 ? (
+                                            <button onClick={() => toggleExpandOrder(order.id)}>
+                                                <FaAnglesDown className={`transition-transform ${expandedOrder === order.id ? 'rotate-180' : ''}`} />
+                                            </button>
+                                        ) : (
+                                            <span className='text-gray-400'>—</span>
+                                        )}
                                     </td>
                                 </tr>
 
-                                {/* Đơn hàng con (hiển thị khi expandAll = true hoặc expandedOrder khớp với ID) */}
-                                {(expandAll || expandedOrder === order.id) && order.subOrders.map((subOrder, index) => (
+                                {/* Đơn hàng con */}
+                                {(expandAll || expandedOrder === order.id) && order.subOrders && order.subOrders.length > 0 && order.subOrders.map((subOrder, index) => (
                                     <tr key={index} className='bg-[#d6f2f8] border-b border-slate-700'>
                                         <td className='py-3 px-4 pl-8 w-[20%] font-medium whitespace-nowrap'>{subOrder.id}</td>
                                         <td className='py-3 px-4 w-[15%] font-medium whitespace-nowrap'>{subOrder.price}</td>
@@ -121,6 +165,17 @@ const AdminOrders = () => {
                         ))}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Phân trang */}
+                <div className='mt-5'>
+                    <Pagination
+                        pageNumber={currentPage}
+                        setPageNumber={setCurrentPage}
+                        totalItem={totalOrders} // Tổng số đơn hàng tổng
+                        parPage={parPage}
+                        showItem={Math.min(parPage, totalOrders)} // Số mục hiển thị trên trang hiện tại
+                    />
                 </div>
             </div>
         </div>
