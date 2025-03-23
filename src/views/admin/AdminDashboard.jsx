@@ -11,15 +11,15 @@ const AdminDashboard = () => {
     const state = {
         series: [
             {
-                name: "Order",
+                name: "Đơn hàng",
                 data: [1,5,7,9,12,2,45,4,12,34,11,56]
             },
             {
-                name: "Revenue",
+                name: "Doanh thu",
                 data: [11,52,72,9,2,22,45,4,45,23,34,12]
             },
             {
-                name: "Sellers",
+                name: "Người bán",
                 data: [12,5,11,9,18,24,35,12,45,12,67,12]
             },
         ],
@@ -44,11 +44,29 @@ const AdminDashboard = () => {
                 dasharray: 0
             },
             xaxis: {
-                categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                categories: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
             },
             legend: {
                 position: 'top'
-            }
+            },
+            responsive: [
+                {
+                    breakpoint: 565,
+                    yaxis: {
+                        categories: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
+                    },
+                    options: {
+                        plotOptions: {
+                            bar: {
+                                horizontal: true,
+                            }
+                        },
+                        chart: {
+                            height: "550px",
+                        }
+                    }
+                }
+            ]
         }
     };
 
