@@ -202,7 +202,7 @@ const AdminDashboard = () => {
                             <th scope='col' className='py-3 px-4'>Giá</th>
                             <th scope='col' className='py-3 px-4'>Trạng thái thanh toán</th>
                             <th scope='col' className='py-3 px-4'>Trạng thái đặt hàng</th>
-                            <th scope='col' className='py-3 px-4'>Hoạt động</th>
+                            <th scope='col' className='py-3 px-4'>Hành động</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -213,7 +213,7 @@ const AdminDashboard = () => {
                                     <td className='py-3 px-6 font-medium whitespace-nowrap'>đ456000</td>
                                     <td className='py-3 px-6 font-medium whitespace-nowrap'>Đang chờ</td>
                                     <td className='py-3 px-6 font-medium whitespace-nowrap'>Đang chờ</td>
-                                    <td className='py-3 px-6 font-medium whitespace-nowrap'>Xem</td>
+                                    <td className='py-3 px-6 font-medium whitespace-nowrap'><Link to='#'>Xem</Link></td>
                                 </tr>
                             ))
                         }
