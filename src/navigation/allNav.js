@@ -14,10 +14,10 @@ export const allNav = [
     },
     {
         id: 2,
-        title: 'Đặt hàng',
+        title: 'Đơn hàng',
         icon: <FaShoppingCart />,
         role: 'admin',
-        path: '/admin/dat-hang'
+        path: '/admin/don-hang'
     },
     {
         id: 3,

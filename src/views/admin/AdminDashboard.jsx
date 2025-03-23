@@ -201,7 +201,7 @@ const AdminDashboard = () => {
                             <th scope='col' className='py-3 px-4'>ID đơn hàng</th>
                             <th scope='col' className='py-3 px-4'>Giá</th>
                             <th scope='col' className='py-3 px-4'>Trạng thái thanh toán</th>
-                            <th scope='col' className='py-3 px-4'>Trạng thái đặt hàng</th>
+                            <th scope='col' className='py-3 px-4'>Trạng thái đơn hàng</th>
                             <th scope='col' className='py-3 px-4'>Hành động</th>
                         </tr>
                         </thead>
