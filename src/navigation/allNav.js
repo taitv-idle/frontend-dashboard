@@ -14,51 +14,51 @@ export const allNav = [
     },
     {
         id: 2,
-        title: 'Order',
+        title: 'Đặt hàng',
         icon: <FaShoppingCart />,
         role: 'admin',
-        path: '/admin/order'
+        path: '/admin/dat-hang'
     },
     {
         id: 3,
-        title: 'Category',
+        title: 'Danh mục',
         icon: <BiSolidCategoryAlt />,
         role: 'admin',
-        path: '/admin/category'
+        path: '/admin/danh-muc'
     },
     {
         id: 4,
-        title: 'Sellers',
+        title: 'Người bán',
         icon: <FaUsers />,
         role: 'admin',
-        path: '/admin/seller'
+        path: '/admin/nguoi-ban'
     },
     {
         id: 5,
-        title: 'Payment Request',
+        title: 'Yêu cầu thanh toán',
         icon: <MdPayments />,
         role: 'admin',
-        path: '/admin/payment-request'
+        path: '/admin/yeu-cau-thanh-toan'
     },
     {
         id: 6,
-            title: 'Deactivate Sellers',
+            title: 'Hủy người bán',
         icon: <FaUserCog />,
         role: 'admin',
-        path: '/admin/deactivate-seller'
+        path: '/admin/huy-nguoi-ban'
     },
     {
         id: 7,
-        title: 'Sellers Request',
+        title: 'Yêu cầu người bán',
         icon: <FaUserPlus />,
         role: 'admin',
-        path: '/admin/seller-request'
+        path: '/admin/yeu-cau-nguoi-ban'
     },
     {
         id: 8,
-        title: 'Live Chat',
+        title: 'Tin nhắn',
         icon: <IoLogoWechat />,
         role: 'admin',
-        path: '/admin/live-chat'
+        path: '/admin/tin-nhan'
     },
 ]

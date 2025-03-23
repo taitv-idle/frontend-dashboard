@@ -61,7 +61,7 @@ const AdminDashboard = () => {
                 <div className='flex justify-between items-center p-5 bg-[#3de0c7] rounded-md gap-3'>
                     <div className='flex flex-col justify-start items-start text-[#5c5a5a]'>
                         <h2 className='text-3xl font-bold'>$2025</h2>
-                        <span className='text-md font-medium'>Total Sale</span>
+                        <span className='text-md font-medium'>Doanh thu</span>
                     </div>
                     <div className='w-[40px] h-[47px] rounded-full bg-red-400 flex justify-center items-center text-xl'>
                         <ImCoinDollar className='text-[#fae8e8] shadow-lg'/>
@@ -71,7 +71,7 @@ const AdminDashboard = () => {
                 <div className='flex justify-between items-center p-5 bg-[#3dd0e0] rounded-md gap-3'>
                     <div className='flex flex-col justify-start items-start text-[#5c5a5a]'>
                         <h2 className='text-3xl font-bold'>50</h2>
-                        <span className='text-md font-medium'>Products</span>
+                        <span className='text-md font-medium'>Sản phẩm</span>
                     </div>
                     <div className='w-[40px] h-[47px] rounded-full bg-[#3de0c7] flex justify-center items-center text-xl'>
                         <MdProductionQuantityLimits className='text-[#fae8e8] shadow-lg'/>
@@ -81,7 +81,7 @@ const AdminDashboard = () => {
                 <div className='flex justify-between items-center p-5 bg-[#43dc27] rounded-md gap-3'>
                     <div className='flex flex-col justify-start items-start text-[#5c5a5a]'>
                         <h2 className='text-3xl font-bold'>60</h2>
-                        <span className='text-md font-medium'>Sellers</span>
+                        <span className='text-md font-medium'>Người bán</span>
                     </div>
                     <div className='w-[40px] h-[47px] rounded-full bg-[#3dd0e0] flex justify-center items-center text-xl'>
                         <PiUsersThreeDuotone className='text-[#fae8e8] shadow-lg'/>
