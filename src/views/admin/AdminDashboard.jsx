@@ -4,6 +4,7 @@ import { MdProductionQuantityLimits } from "react-icons/md";
 import { PiUsersThreeDuotone } from "react-icons/pi";
 import { BiCartAdd } from "react-icons/bi";
 import Chart from 'react-apexcharts'
+import {Link} from "react-router-dom";
 
 
 const AdminDashboard = () => {
@@ -52,17 +53,21 @@ const AdminDashboard = () => {
             responsive: [
                 {
                     breakpoint: 565,
-                    yaxis: {
-                        categories: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
-                    },
                     options: {
+                        yaxis: {
+                            categories: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
+                        },
                         plotOptions: {
                             bar: {
                                 horizontal: true,
+                                borderRadius: 5, // Bo góc cột
                             }
                         },
                         chart: {
                             height: "550px",
+                        },
+                        legend: {
+                            position: 'bottom' // Chuyển chú thích xuống dưới cho mobile
                         }
                     }
                 }
@@ -119,13 +124,70 @@ const AdminDashboard = () => {
             </div>
 
             <div className='w-full flex flex-wrap mt-7'>
+                {/* Biểu đồ */}
                 <div className='w-full lg:w-7/12 lg:pr-3'>
-                    <div className='w-full bg-[#e095ee] p-4 rounded-md '>
-                        <Chart options={state.options} series={state.series} type='bar' height='350px'/>
+                    <div className='w-full bg-[#e095ee] p-4 rounded-md'>
+                        <Chart options={state.options} series={state.series} type='bar' height='350px' />
+                    </div>
+                </div>
+
+                {/* Tin nhắn người bán gần đây */}
+                <div className='w-full lg:w-5/12 lg:pl-4 mt-6 lg:mt-0'>
+                    <div className='w-full bg-[#81a3ea] p-4 rounded-md text-[#d0d2d6]'>
+                        {/* Tiêu đề và liên kết */}
+                        <div className='flex justify-between items-center'>
+                            <h2 className='font-semibold text-lg text-[#d0d2d6] pb-3'>Tin nhắn người bán gần đây</h2>
+                            <Link className='font-semibold text-sm text-[#d0d2d6]' to="#">Xem tất cả</Link>
+                        </div>
+
+                        {/* Danh sách tin nhắn */}
+                        <ol className='relative border-l border-slate-600 ml-4 mt-4'>
+                            <li className='mb-3 ml-6'>
+                                <div className='flex absolute -left-5 shadow-lg justify-center items-center w-10 h-10 p-[6px] bg-[#eac881] rounded-full z-10'>
+                                    <img className='w-full h-full rounded-full shadow-lg' src="/images/admin.png" alt="admin" />
+                                </div>
+                                <div className='p-3 bg-slate-800 rounded-lg border border-slate-600 shadow-sm'>
+                                    <div className='flex justify-between items-center mb-2'>
+                                        <Link className='text-md font-normal'>Admin</Link>
+                                        <time className='mb-1 text-sm font-normal sm:order-last sm:mb-0'>2 ngày trước</time>
+                                    </div>
+                                    <div className='p-2 text-xs font-normal bg-slate-700 rounded-lg border border-slate-800'>
+                                        Bạn khỏe không
+                                    </div>
+                                </div>
+                            </li>
+                            <li className='mb-3 ml-6'>
+                                <div className='flex absolute -left-5 shadow-lg justify-center items-center w-10 h-10 p-[6px] bg-[#eac881] rounded-full z-10'>
+                                    <img className='w-full h-full rounded-full shadow-lg' src="/images/seller.png" alt="seller" />
+                                </div>
+                                <div className='p-3 bg-slate-800 rounded-lg border border-slate-600 shadow-sm'>
+                                    <div className='flex justify-between items-center mb-2'>
+                                        <Link className='text-md font-normal'>Người bán</Link>
+                                        <time className='mb-1 text-sm font-normal sm:order-last sm:mb-0'>1 giờ trước</time>
+                                    </div>
+                                    <div className='p-2 text-xs font-normal bg-slate-700 rounded-lg border border-slate-800'>
+                                        Cảm ơn bạn!
+                                    </div>
+                                </div>
+                            </li>
+                            <li className='mb-3 ml-6'>
+                                <div className='flex absolute -left-5 shadow-lg justify-center items-center w-10 h-10 p-[6px] bg-[#eac881] rounded-full z-10'>
+                                    <img className='w-full h-full rounded-full shadow-lg' src="/images/admin.png" alt="admin" />
+                                </div>
+                                <div className='p-3 bg-slate-800 rounded-lg border border-slate-600 shadow-sm'>
+                                    <div className='flex justify-between items-center mb-2'>
+                                        <Link className='text-md font-normal'>Admin</Link>
+                                        <time className='mb-1 text-sm font-normal sm:order-last sm:mb-0'>1 giờ trước</time>
+                                    </div>
+                                    <div className='p-2 text-xs font-normal bg-slate-700 rounded-lg border border-slate-800'>
+                                        Cảm ơn bạn!
+                                    </div>
+                                </div>
+                            </li>
+                        </ol>
                     </div>
                 </div>
             </div>
-
         </div>
     );
 };
