@@ -206,13 +206,17 @@ const AdminDashboard = () => {
                         </tr>
                         </thead>
                         <tbody>
-                        <tr>
-                            <td className='py-3 px-6 font-medium whitespace-nowrap'>#1212</td>
-                            <td className='py-3 px-6 font-medium whitespace-nowrap'>đ456000</td>
-                            <td className='py-3 px-6 font-medium whitespace-nowrap'>Đang chờ</td>
-                            <td className='py-3 px-6 font-medium whitespace-nowrap'>Đang chờ</td>
-                            <td className='py-3 px-6 font-medium whitespace-nowrap'>Xem</td>
-                        </tr>
+                        {
+                            [1,2,3,4,5].map((item, i) => (
+                                <tr key={i}>
+                                    <td className='py-3 px-6 font-medium whitespace-nowrap'>#1212</td>
+                                    <td className='py-3 px-6 font-medium whitespace-nowrap'>đ456000</td>
+                                    <td className='py-3 px-6 font-medium whitespace-nowrap'>Đang chờ</td>
+                                    <td className='py-3 px-6 font-medium whitespace-nowrap'>Đang chờ</td>
+                                    <td className='py-3 px-6 font-medium whitespace-nowrap'>Xem</td>
+                                </tr>
+                            ))
+                        }
                         </tbody>
                     </table>
                 </div>
