@@ -2,12 +2,13 @@ import React, {useState} from 'react';
 import {Link} from "react-router-dom";
 import {FaEdit} from "react-icons/fa";
 import {MdDeleteForever} from "react-icons/md";
+import Pagination from "../Pagination";
 
 const Category = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [search, setSearch] = useState('');
     const [parPage, setParPage] = useState(5);
-
+    const [show, setShow] = useState(false)
     return (
         <div className='px-2 lg:px-7 pt-5'>
             <div className='flex flex-wrap w-full '>
@@ -63,11 +64,31 @@ const Category = () => {
                             </tbody>
                         </table>
                     </div>
-
+                    {/* Phân trang */}
+                    <div className='mt-5'>
+                        <Pagination
+                            pageNumber={currentPage}
+                            setPageNumber={setCurrentPage}
+                            totalItem={50}
+                            parPage={parPage}
+                            showItem={Math.min(parPage, 50)}
+                        />
+                    </div>
                 </div>
 
-                <div className='w-full lg:w-5/12 bg-[#dfac3f] rounded-md'>
+                <div className={`w-[320px] lg:w-5/12 translate-x-100 lg:relative lg:right-0 ${show ? 'right-0' : '-right-[340px]'} z-20 top-0 transition-all duration-500`}>
+                    <div className='w-full pl-5'>
+                        <div className='bg-amber-100 h-screen lg:h-auto px-3 py-2 lg:rounded-md text-[#ddd]'>
+                            <h2 className='text-blue-600 font-semibold text-xl mb-4 w-full text-center'>Thêm danh mục</h2>
+                            <form action="">
+                                <div className='flex flex-col w-full gap-1 mb-3'>
+                                    <label htmlFor="name">Tên danh mục</label>
+                                    <input className='px-4 py-2 w-full sm:w-auto focus:border-indigo-400 outline-none bg-[#fff] border border-slate-700 rounded-md' type="text" id='name' name='danh_muc'placeholder='Tên danh mục'/>
+                                </div>
 
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
