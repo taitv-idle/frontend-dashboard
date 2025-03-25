@@ -3,7 +3,7 @@ import { FaAnglesDown } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 import Pagination from "../Pagination";
 
-const AdminOrders = () => {
+const Orders = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [search, setSearch] = useState('');
     const [parPage, setParPage] = useState(5);
@@ -182,4 +182,4 @@ const AdminOrders = () => {
     );
 };
 
-export default AdminOrders;
+export default Orders;
