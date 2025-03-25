@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from "react-router-dom";
 import { GrView } from "react-icons/gr";
-import { FaCheck } from "react-icons/fa"; 
+import { FaCheck } from "react-icons/fa";
 import Pagination from "../Pagination";
 
 const SellerRequest = () => {
@@ -68,7 +68,7 @@ const SellerRequest = () => {
                                 <td className='py-2 px-2 sm:px-3'>
                                     <div className='flex items-center gap-2'>
                                         <Link
-                                            to='#'
+                                            to='/admin/nguoi-ban/thong-tin/2'
                                             className='p-1.5 bg-teal-500 text-white rounded-md hover:bg-teal-600 transition-colors'
                                             title="Xem chi tiết"
                                         >

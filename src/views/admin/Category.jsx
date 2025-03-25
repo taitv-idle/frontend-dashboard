@@ -43,7 +43,7 @@ const Category = () => {
                                 <th scope='col' className='py-2 px-2 sm:px-4'>TT</th>
                                 <th scope='col' className='py-2 px-2 sm:px-4'>Hình ảnh</th>
                                 <th scope='col' className='py-2 px-2 sm:px-4'>Tên</th>
-                                <th scope='col' className='py-2 px-2 sm:px-4 hidden sm:table-cell'>Hành động</th>
+                                <th scope='col' className='py-2 px-2 sm:px-4 sm:table-cell'>Hành động</th>
                             </tr>
                             </thead>
                             <tbody>
