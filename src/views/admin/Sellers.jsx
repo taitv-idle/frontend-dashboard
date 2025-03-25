@@ -10,6 +10,9 @@ const Sellers = () => {
 
     return (
         <div className='px-2 sm:px-4 lg:px-7 pt-5 max-w-full'>
+
+            <h1 className='text-[20px] font-bold mb-3'>Hủy kích hoạt nguoi bán</h1>
+
             <div className='w-full bg-white rounded-lg shadow-md p-4'>
                 {/* Bộ lọc và tìm kiếm */}
                 <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4'>

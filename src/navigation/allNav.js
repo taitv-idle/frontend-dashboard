@@ -42,7 +42,7 @@ export const allNav = [
     },
     {
         id: 6,
-            title: 'Hủy người bán',
+            title: 'Người bán ngừng hoạt động',
         icon: <FaUserCog />,
         role: 'admin',
         path: '/admin/huy-nguoi-ban'
