@@ -72,7 +72,7 @@ const Pagination = ({ pageNumber, setPageNumber, totalItem, parPage, showItem })
             </button>
 
             <span className='ml-4 text-sm text-gray-700'>
-                Trang {pageNumber} / {totalPages} (Tổng {totalItem} đơn hàng)
+                Trang {pageNumber} / {totalPages} (Tổng {totalItem})
             </span>
         </div>
     );
