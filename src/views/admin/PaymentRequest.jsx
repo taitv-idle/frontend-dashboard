@@ -1,75 +1,112 @@
-import React, { forwardRef } from 'react';
-import { FixedSizeList as List } from "react-window";
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { confirm_payment_request, get_payment_request, messageClear } from '../../store/Reducers/PaymentReducer';
+import moment from 'moment';
+import toast from 'react-hot-toast';
+import { PropagateLoader } from 'react-spinners';
+import { overrideStyle } from '../../utils/utils';
 
 const PaymentRequest = () => {
-    // Xử lý sự kiện cuộn
-    const handleOnWheel = ({ deltaY }) => {
-        console.log('handleOnWheel', deltaY);
+    const dispatch = useDispatch();
+    const { successMessage, errorMessage, pendingWithdrows, loader } = useSelector(state => state.payment);
+    const [paymentId, setPaymentId] = useState('');
+
+    useEffect(() => {
+        dispatch(get_payment_request());
+    }, [dispatch]);
+
+    const confirmRequest = (id) => {
+        setPaymentId(id);
+        dispatch(confirm_payment_request(id));
     };
 
-    // Custom outer element cho List để thêm sự kiện cuộn
-    const outerElementType = forwardRef((props, ref) => (
-        <div ref={ref} onWheel={handleOnWheel} {...props} />
-    ));
+    useEffect(() => {
+        if (successMessage) {
+            toast.success(successMessage);
+            dispatch(messageClear());
+        }
+        if (errorMessage) {
+            toast.error(errorMessage);
+            dispatch(messageClear());
+        }
+    }, [successMessage, errorMessage, dispatch]);
 
-    // Component Row cho từng dòng trong danh sách
-    const Row = ({ index, style }) => {
-        const status = index % 2 === 0 ? 'Đang chờ' : 'Đã xác nhận';
+    // Hàm hiển thị trạng thái với màu sắc
+    const renderStatusBadge = (status) => {
+        const statusConfig = {
+            pending: { color: 'bg-yellow-100 text-yellow-800', label: 'Chờ xử lý' },
+            confirmed: { color: 'bg-green-100 text-green-800', label: 'Đã xác nhận' },
+            rejected: { color: 'bg-red-100 text-red-800', label: 'Đã từ chối' }
+        };
+
+        const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800', label: status };
+
         return (
-            <div style={style} className='flex text-sm text-gray-800 border-b border-gray-300 hover:bg-gray-100'>
-                <div className='w-[10%] p-2 whitespace-nowrap'>{index + 1}</div>
-                <div className='w-[20%] p-2 whitespace-nowrap'>
-                    {(100000 * (index + 1)).toLocaleString('vi-VN')}đ
-                </div>
-                <div className='w-[20%] p-2 whitespace-nowrap'>
-                    <span
-                        className={`py-1 px-2 rounded-md text-xs ${
-                            status === 'Đang chờ' ? 'bg-yellow-200 text-yellow-900' : 'bg-green-200 text-green-900'
-                        }`}
-                    >
-                        {status}
-                    </span>
-                </div>
-                <div className='w-[20%] p-2 whitespace-nowrap'>25 Mar 2025</div>
-                <div className='w-[30%] p-2 whitespace-nowrap'>
-                    <button
-                        className='bg-indigo-600 text-white px-3 py-1 rounded-md shadow-md hover:bg-indigo-700 transition-colors text-xs'
-                    >
-                        Xác nhận
-                    </button>
-                </div>
-            </div>
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.color}`}>
+                {config.label}
+            </span>
         );
     };
 
     return (
-        <div className='px-2 sm:px-4 lg:px-7 pt-5 max-w-full'>
-            <div className='w-full bg-[#f0f4f8] rounded-lg shadow-md p-4'>
-                <h2 className='text-xl font-semibold text-gray-800 mb-4'>Yêu cầu thanh toán</h2>
-                <div className='w-full'>
-                    <div className='w-full overflow-x-auto'>
-                        {/* Header bảng */}
-                        <div className='flex bg-[#d1dbe8] text-gray-700 uppercase font-semibold text-xs min-w-[340px] rounded-t-md'>
-                            <div className='w-[10%] p-2'>TT</div>
-                            <div className='w-[20%] p-2'>Số tiền</div>
-                            <div className='w-[20%] p-2'>Trạng thái</div>
-                            <div className='w-[20%] p-2'>Ngày</div>
-                            <div className='w-[30%] p-2'>Hành động</div>
-                        </div>
-
-                        {/* Danh sách virtualized */}
-                        <List
-                            style={{ minWidth: '340px' }}
-                            className='List'
-                            height={350}
-                            itemCount={100}
-                            itemSize={35} // Tăng itemSize để vừa với nội dung
-                            outerElementType={outerElementType}
-                        >
-                            {Row}
-                        </List>
-                    </div>
+        <div className="px-4 lg:px-8 py-6">
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                <div className="p-6 border-b border-gray-200">
+                    <h2 className="text-xl font-semibold text-gray-800">Yêu cầu rút tiền</h2>
                 </div>
+
+                {pendingWithdrows.length === 0 ? (
+                    <div className="p-6 text-center text-gray-500">
+                        Không có yêu cầu rút tiền nào đang chờ xử lý
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                            <tr>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số tiền</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày yêu cầu</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+                            </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                            {pendingWithdrows.map((request, index) => (
+                                <tr key={request._id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {index + 1}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        ${request.amount.toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        {renderStatusBadge(request.status)}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {moment(request.createdAt).format('LL')}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        {request.status === 'pending' && (
+                                            <button
+                                                onClick={() => confirmRequest(request._id)}
+                                                disabled={loader && paymentId === request._id}
+                                                className={`px-3 py-1 rounded-md text-white ${loader && paymentId === request._id ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'} transition-colors`}
+                                            >
+                                                {loader && paymentId === request._id ? (
+                                                    <PropagateLoader color="#ffffff" cssOverride={overrideStyle} size={8} />
+                                                ) : (
+                                                    'Xác nhận'
+                                                )}
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -1,64 +1,139 @@
-import { AiFillDashboard } from "react-icons/ai";
-import { FaShoppingCart, FaUsers, FaUserCog, FaUserPlus } from "react-icons/fa";
-import { BiSolidCategoryAlt } from "react-icons/bi";
-import { MdPayments } from "react-icons/md";
-import { IoLogoWechat } from "react-icons/io5";
-
+import {
+    RiStore3Line,
+    RiMoneyDollarCircleLine,
+    RiUserForbidLine,
+    RiUserAddLine,
+    RiChat3Line,
+    RiAddBoxLine,
+    RiProductHuntLine,
+    RiCouponLine,
+    RiShoppingBag3Line,
+    RiBankLine,
+    RiChatSmile2Line,
+    RiCustomerService2Line,
+    RiUserSettingsLine,
+} from 'react-icons/ri';
+import { FiPackage } from 'react-icons/fi';
+import {AiOutlineDashboard} from "react-icons/ai";
+import {BiCategoryAlt} from "react-icons/bi";
 export const allNav = [
     {
         id: 1,
-        title: 'Dashboard',
-        icon: <AiFillDashboard />,
+        title: 'Bảng điều khiển',
+        icon: <AiOutlineDashboard />, // Giữ nguyên - phù hợp
         role: 'admin',
         path: '/admin/dashboard'
     },
     {
         id: 2,
         title: 'Đơn hàng',
-        icon: <FaShoppingCart />,
+        icon: <FiPackage />, // Đổi từ shopping cart sang package (phù hợp với đơn hàng admin)
         role: 'admin',
-        path: '/admin/don-hang'
+        path: '/admin/orders'
     },
     {
         id: 3,
         title: 'Danh mục',
-        icon: <BiSolidCategoryAlt />,
+        icon: <BiCategoryAlt />, // Đổi sang phiên bản category có thiết kế đẹp hơn
         role: 'admin',
-        path: '/admin/danh-muc'
+        path: '/admin/category'
     },
     {
         id: 4,
         title: 'Người bán',
-        icon: <FaUsers />,
+        icon: <RiStore3Line />, // Đổi từ users sang store (phù hợp với người bán)
         role: 'admin',
-        path: '/admin/nguoi-ban'
+        path: '/admin/sellers'
     },
     {
         id: 5,
         title: 'Yêu cầu thanh toán',
-        icon: <MdPayments />,
+        icon: <RiMoneyDollarCircleLine />, // Đổi sang icon tiền rõ ràng hơn
         role: 'admin',
-        path: '/admin/yeu-cau-thanh-toan'
+        path: '/admin/payment-request'
     },
     {
         id: 6,
-            title: 'Người bán ngừng hoạt động',
-        icon: <FaUserCog />,
+        title: 'Người bán bị vô hiệu hóa',
+        icon: <RiUserForbidLine />, // Icon thể hiện "cấm" rõ ràng hơn
         role: 'admin',
-        path: '/admin/huy-nguoi-ban'
+        path: '/admin/deactive-sellers'
     },
     {
         id: 7,
-        title: 'Yêu cầu người bán',
-        icon: <FaUserPlus />,
+        title: 'Yêu cầu đăng ký người bán',
+        icon: <RiUserAddLine />, // Icon thêm người dùng phù hợp hơn
         role: 'admin',
-        path: '/admin/yeu-cau-nguoi-ban'
+        path: '/admin/sellers-request'
     },
     {
         id: 8,
-        title: 'Tin nhắn',
-        icon: <IoLogoWechat />,
+        title: 'Trò chuyện trực tiếp',
+        icon: <RiChat3Line />, // Icon chat đơn giản, hiện đại
         role: 'admin',
-        path: '/admin/tin-nhan'
+        path: '/admin/chat-sellers'
     },
-]
+    {
+        id: 9,
+        title: 'Bảng điều khiển',
+        icon: <AiOutlineDashboard />, // Giữ nguyên
+        role: 'seller',
+        path: '/seller/dashboard'
+    },
+    {
+        id: 10,
+        title: 'Thêm sản phẩm',
+        icon: <RiAddBoxLine />, // Đổi sang icon thêm có hộp (phù hợp thêm sản phẩm)
+        role: 'seller',
+        path: '/seller/add-product'
+    },
+    {
+        id: 11,
+        title: 'Tất cả sản phẩm',
+        icon: <RiProductHuntLine />, // Icon sản phẩm chuyên nghiệp
+        role: 'seller',
+        path: '/seller/products'
+    },
+    {
+        id: 12,
+        title: 'Sản phẩm giảm giá',
+        icon: <RiCouponLine />, // Icon coupon thể hiện giảm giá
+        role: 'seller',
+        path: '/seller/discount-product'
+    },
+    {
+        id: 13,
+        title: 'Đơn hàng',
+        icon: <RiShoppingBag3Line />, // Icon túi mua hàng phù hợp với seller
+        role: 'seller',
+        path: '/seller/orders'
+    },
+    {
+        id: 14,
+        title: 'Thanh toán',
+        icon: <RiBankLine />, // Icon ngân hàng/thẻ phù hợp thanh toán
+        role: 'seller',
+        path: '/seller/payments'
+    },
+    {
+        id: 15,
+        title: 'Trò chuyện với khách hàng',
+        icon: <RiChatSmile2Line />, // Icon chat có smile (phù hợp khách hàng)
+        role: 'seller',
+        path: '/seller/chat-customer'
+    },
+    {
+        id: 16,
+        title: 'Trò chuyện với hỗ trợ',
+        icon: <RiCustomerService2Line />, // Icon hỗ trợ khách hàng
+        role: 'seller',
+        path: '/seller/chat-support'
+    },
+    {
+        id: 17,
+        title: 'Hồ sơ cá nhân',
+        icon: <RiUserSettingsLine />, // Icon profile có setting (thể hiện cá nhân)
+        role: 'seller',
+        path: '/seller/profile'
+    }
+];

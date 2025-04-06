@@ -1,104 +1,152 @@
-import React, { useState } from 'react';
-import { Link } from "react-router-dom";
-import { GrView } from "react-icons/gr";
-import { FaCheck } from "react-icons/fa";
-import Pagination from "../Pagination";
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import Pagination from '../Pagination';
+import { FaEye, FaSearch } from 'react-icons/fa';
+import { useDispatch, useSelector } from 'react-redux';
+import { get_seller_request } from '../../store/Reducers/sellerReducer';
 
 const SellerRequest = () => {
+    const dispatch = useDispatch();
+    const { sellers, totalSeller } = useSelector(state => state.seller);
+
     const [currentPage, setCurrentPage] = useState(1);
-    const [search, setSearch] = useState('');
+    const [searchValue, setSearchValue] = useState('');
     const [parPage, setParPage] = useState(5);
 
+    useEffect(() => {
+        dispatch(get_seller_request({
+            parPage: parseInt(parPage),
+            searchValue,
+            page: parseInt(currentPage)
+        }));
+    }, [parPage, searchValue, currentPage, dispatch]);
+
+    // Hàm hiển thị trạng thái với màu sắc
+    const renderStatusBadge = (status) => {
+        const statusConfig = {
+            pending: { color: 'bg-yellow-100 text-yellow-800', label: 'Chờ duyệt' },
+            approved: { color: 'bg-green-100 text-green-800', label: 'Đã duyệt' },
+            rejected: { color: 'bg-red-100 text-red-800', label: 'Từ chối' }
+        };
+
+        const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800', label: status };
+
+        return (
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.color}`}>
+                {config.label}
+            </span>
+        );
+    };
+
+    // Hàm hiển thị trạng thái thanh toán
+    const renderPaymentStatus = (payment) => {
+        return payment === 'paid' ? (
+            <span className="text-green-600 font-medium">Đã thanh toán</span>
+        ) : (
+            <span className="text-yellow-600 font-medium">Chưa thanh toán</span>
+        );
+    };
+
     return (
-        <div className='px-2 sm:px-4 lg:px-7 pt-5 max-w-full'>
-            <h1 className='text-xl font-bold text-gray-900 mb-4'>Yêu cầu thành người bán</h1>
-            <div className='w-full bg-[#fef8e6] rounded-lg shadow-sm p-4 border border-gray-300'>
-                {/* Bộ lọc và tìm kiếm */}
-                <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4'>
+        <div className="px-4 lg:px-8 py-6">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <h1 className="text-2xl font-bold text-gray-800">Yêu cầu trở thành Người bán</h1>
+
+                {/* Search và filter */}
+                <div className="flex items-center gap-4 w-full md:w-auto">
+                    <div className="relative flex-1 md:w-64">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <FaSearch className="text-gray-400" />
+                        </div>
+                        <input
+                            type="text"
+                            onChange={(e) => setSearchValue(e.target.value)}
+                            value={searchValue}
+                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            placeholder="Tìm kiếm người bán..."
+                        />
+                    </div>
+
                     <select
                         onChange={(e) => setParPage(parseInt(e.target.value))}
-                        className='px-3 py-1.5 w-full sm:w-24 border border-gray-300 rounded-md bg-white text-gray-700 focus:ring-2 focus:ring-teal-400 outline-none text-sm'
+                        value={parPage}
+                        className="block w-full md:w-24 pl-3 pr-10 py-2 text-base border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                     >
-                        <option value="5">5</option>
-                        <option value="10">10</option>
-                        <option value="15">15</option>
+                        <option value="5">5 dòng</option>
+                        <option value="10">10 dòng</option>
+                        <option value="20">20 dòng</option>
                     </select>
-                    <input
-                        className='px-3 py-1.5 w-full sm:w-64 border border-gray-300 rounded-md bg-white text-gray-700 focus:ring-2 focus:ring-teal-400 outline-none placeholder-gray-400 text-sm'
-                        type="text"
-                        placeholder='Tìm kiếm yêu cầu...'
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
                 </div>
+            </div>
 
-                {/* Bảng */}
-                <div className="relative overflow-x-auto">
-                    <table className='w-full text-sm text-left text-gray-800'>
-                        <thead className='text-xs uppercase bg-[#ffe8a8] text-gray-700 border-b border-gray-300'>
+            {/* Bảng danh sách yêu cầu */}
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
                         <tr>
-                            <th scope='col' className='py-2 px-2 sm:px-3'>TT</th>
-                            <th scope='col' className='py-2 px-2 sm:px-3'>Hình ảnh</th>
-                            <th scope='col' className='py-2 px-2 sm:px-3'>Tên</th>
-                            <th scope='col' className='py-2 px-2 sm:px-3 hidden lg:table-cell'>Email</th>
-                            <th scope='col' className='py-2 px-2 sm:px-3 hidden md:table-cell'>Trạng thái thanh toán</th>
-                            <th scope='col' className='py-2 px-2 sm:px-3 hidden xl:table-cell'>Trạng thái</th>
-                            <th scope='col' className='py-2 px-2 sm:px-3'>Hành động</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thanh toán</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
                         </tr>
                         </thead>
-                        <tbody>
-                        {[1, 2, 3, 4, 5].map((item, i) => (
-                            <tr key={i} className='hover:bg-yellow-50 border-b border-gray-200'>
-                                <td className='py-2 px-2 sm:px-3 font-medium'>{item}</td>
-                                <td className='py-2 px-2 sm:px-3'>
-                                    <img
-                                        className='w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover'
-                                        src={`/images/sellers/${item}.jpg`}
-                                        alt={`Người bán ${item}`}
-                                    />
-                                </td>
-                                <td className='py-2 px-2 sm:px-3 font-medium'>Người bán {item}</td>
-                                <td className='py-2 px-2 sm:px-3 font-medium hidden lg:table-cell'>seller{item}@example.com</td>
-                                <td className='py-2 px-2 sm:px-3 font-medium hidden md:table-cell'>
-                                    Chưa kích hoạt
-                                </td>
-                                <td className='py-2 px-2 sm:px-3 font-medium hidden xl:table-cell'>
-                                    <span className='py-1 px-2 bg-yellow-200 text-yellow-800 rounded-md text-xs'>Đang chờ</span>
-                                </td>
-                                <td className='py-2 px-2 sm:px-3'>
-                                    <div className='flex items-center gap-2'>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                        {sellers.length > 0 ? (
+                            sellers.map((seller, index) => (
+                                <tr key={seller._id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {(currentPage - 1) * parPage + index + 1}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {seller.name}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {seller.email}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        {renderPaymentStatus(seller.payment)}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        {renderStatusBadge(seller.status)}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <Link
-                                            to='/admin/nguoi-ban/thong-tin/2'
-                                            className='p-1.5 bg-teal-500 text-white rounded-md hover:bg-teal-600 transition-colors'
+                                            to={`/admin/dashboard/seller/details/${seller._id}`}
+                                            className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-50 transition-colors inline-block"
                                             title="Xem chi tiết"
                                         >
-                                            <GrView size={14} />
+                                            <FaEye />
                                         </Link>
-                                        <Link
-                                            to='#'
-                                            className='p-1.5 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors'
-                                            title="Duyệt yêu cầu"
-                                        >
-                                            <FaCheck size={14} />
-                                        </Link>
-                                    </div>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
+                                    Không có yêu cầu nào
                                 </td>
                             </tr>
-                        ))}
+                        )}
                         </tbody>
                     </table>
                 </div>
 
                 {/* Phân trang */}
-                <div className='mt-4'>
-                    <Pagination
-                        pageNumber={currentPage}
-                        setPageNumber={setCurrentPage}
-                        totalItem={50}
-                        parPage={parPage}
-                        showItem={Math.min(parPage, 50)}
-                    />
-                </div>
+                {totalSeller > parPage && (
+                    <div className="px-6 py-4 border-t border-gray-200">
+                        <Pagination
+                            pageNumber={currentPage}
+                            setPageNumber={setCurrentPage}
+                            totalItem={totalSeller}
+                            parPage={parPage}
+                            showItem={3}
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );

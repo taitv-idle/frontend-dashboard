@@ -1,69 +1,78 @@
-import React, {useState} from 'react';
-import {Link} from "react-router-dom";
-import { FaGoogle } from "react-icons/fa6";
-import { FaFacebook } from "react-icons/fa";
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaGoogle, FaFacebook } from "react-icons/fa";
+import { PropagateLoader } from 'react-spinners';
+import toast from 'react-hot-toast';
+import { useDispatch, useSelector } from 'react-redux';
+import { overrideStyle } from '../../utils/utils';
+import { seller_login, messageClear } from '../../store/Reducers/authReducer';
 
 const Login = () => {
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const { loader, errorMessage, successMessage } = useSelector(state => state.auth);
+
     const [state, setState] = useState({
-        email: '',
-        password: '',
+        email: "",
+        password: ""
     });
-    const inputHandler = (e) => {
+
+    const inputHandle = (e) => {
         setState({
             ...state,
-            [e.target.name]: e.target.value,
+            [e.target.name]: e.target.value
         });
     };
+
     const submit = (e) => {
         e.preventDefault();
+        dispatch(seller_login(state));
     };
 
+    useEffect(() => {
+        if (successMessage) {
+            toast.success(successMessage);
+            dispatch(messageClear());
+            navigate('/');
+        }
+        if (errorMessage) {
+            toast.error(errorMessage);
+            dispatch(messageClear());
+        }
+    }, [successMessage, errorMessage, dispatch, navigate]);
+
     return (
-        <div className='min-w-screen min-h-screen bg-[#cdcae9] flex items-center justify-center'>
-            <div className='w-[350px] text-[#ffffff] p-2'>
-                <div className='bg-[#6f68d1] p-4 rounded-md'>
-                    <h2 className='text-xl mb-3 font-bold'>Welcome to Ecommerce</h2>
-                    <p className='text-sm mb-3 front-medium'>Please sign in your account</p>
-                    <form onSubmit={submit} action="">
+        <div className='min-h-screen flex justify-center items-center bg-gradient-to-r from-purple-400 via-purple-600 to-purple-800'>
+            <div className='w-[400px] p-6 bg-white shadow-xl rounded-lg'>
+                <h2 className='text-2xl font-bold text-gray-800 text-center mb-2'>Chào mừng đến với Ecommerce</h2>
+                <p className='text-sm text-gray-600 text-center mb-4'>Vui lòng đăng nhập vào tài khoản của bạn</p>
+                <form onSubmit={submit}>
+                    <div className='flex flex-col mb-4'>
+                        <label htmlFor="email" className='text-gray-700 font-semibold mb-2'>Email</label>
+                        <input onChange={inputHandle} value={state.email} className='px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 outline-none' type="email" name='email' placeholder='Nhập email của bạn' id='email' required />
+                    </div>
 
-                        <div className='flex flex-col w-full gap-1 mb-3'>
-                            <label htmlFor="email">Email</label>
-                            <input onChange={inputHandler} value={state.email} className='px-3 py-2 outline-none border border-slate-400 bg-transparent rounded-md'
-                                   type="email" name="email" id="email" placeholder="Enter your email" required/>
-                        </div>
+                    <div className='flex flex-col mb-4'>
+                        <label htmlFor="password" className='text-gray-700 font-semibold mb-2'>Mật khẩu</label>
+                        <input onChange={inputHandle} value={state.password} className='px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 outline-none' type="password" name='password' placeholder='Nhập mật khẩu của bạn' id='password' required />
+                    </div>
 
-                        <div className='flex flex-col w-full gap-1 mb-3'>
-                            <label htmlFor="password">Password</label>
-                            <input onChange={inputHandler} value={state.password} className='px-3 py-2 outline-none border border-slate-400 bg-transparent rounded-md'
-                                   type="password" name="password" id="password" placeholder="Enter your password" required/>
-                        </div>
+                    <button disabled={loader} className={`w-full text-white font-semibold py-2 rounded-md transition-all duration-300 ${loader ? 'bg-gray-500 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'}`}>{loader ? <PropagateLoader color='#fff' cssOverride={overrideStyle} /> : 'Đăng nhập'}</button>
+                </form>
 
-                        <button className='bg-slate-800 w-full hover:shadow-blue-300/hover:shadow-lg text-while rounded-md px-7 py-2 mb-3' type="submit">
-                            Sign in
-                        </button>
+                <div className='flex items-center justify-center mt-4 text-sm'>
+                    <p>Bạn chưa có tài khoản? <Link className='font-bold text-purple-600 hover:underline' to="/register">Đăng ký</Link></p>
+                </div>
 
-                        <div className='flex items-center mb-3 gap-3 justify-center'>
-                            <p>Don't have an account? <Link className='font-bold' to='/register'>Register</Link></p>
-                        </div>
+                <div className='flex items-center my-4'>
+                    <div className='flex-grow border-t border-gray-300'></div>
+                    <span className='mx-2 text-gray-600'>Hoặc</span>
+                    <div className='flex-grow border-t border-gray-300'></div>
+                </div>
 
-                        <div className='w-full flex justify-center items-center mb-3'>
-                            <div className='w-[45%] bg-slate-700 h-[1px]'></div>
-                            <div className='w-[10%] flex justify-center items-center'>
-                                <span className='pb-1'>Or </span>
-                            </div>
-                            <div className='w-[45%] bg-slate-700 h-[1px]'></div>
-                        </div>
-
-                        <div className='flex justify-center items-center gap-3'>
-                            <div className='w-[135px] h-[35px] flex rounded-md bg-orange-700 shadow-lg hover:shadow-orange-700/50 justify-center items-center cursor-pointer overflow-hidden'>
-                                <span><FaGoogle/></span>
-                            </div>
-
-                            <div className='w-[135px] h-[35px] flex rounded-md bg-blue-700 shadow-lg hover:shadow-blue-700/50 justify-center items-center cursor-pointer overflow-hidden'>
-                                <span><FaFacebook/></span>
-                            </div>
-                        </div>
-                    </form>
+                <div className='flex justify-center gap-4'>
+                    <button className='w-40 h-10 flex items-center justify-center rounded-md bg-orange-600 text-white hover:bg-orange-700 transition-all'><FaGoogle className='mr-2' /> Google</button>
+                    <button className='w-40 h-10 flex items-center justify-center rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-all'><FaFacebook className='mr-2' /> Facebook</button>
                 </div>
             </div>
         </div>

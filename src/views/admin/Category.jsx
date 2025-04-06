@@ -1,157 +1,316 @@
-import React, { useState } from 'react';
-import { Link } from "react-router-dom";
-import { FaEdit } from "react-icons/fa";
-import { MdDeleteForever } from "react-icons/md";
-import { FaImage } from "react-icons/fa6";
-import Pagination from "../Pagination";
+import React, { useEffect, useState } from 'react';
+import Pagination from '../Pagination';
+import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
+import { FaImage } from "react-icons/fa";
+import { IoMdClose } from "react-icons/io";
+import { PropagateLoader } from 'react-spinners';
+import { overrideStyle } from '../../utils/utils';
+import {
+    categoryAdd,
+    messageClear,
+    get_category,
+    updateCategory,
+    deleteCategory
+} from '../../store/Reducers/categoryReducer';
+import { useDispatch, useSelector } from 'react-redux';
+import toast from 'react-hot-toast';
+import Search from '../components/Search';
 
 const Category = () => {
+    const dispatch = useDispatch();
+    const { loader, successMessage, errorMessage, categorys, totalCategory } = useSelector(state => state.category);
+
     const [currentPage, setCurrentPage] = useState(1);
-    const [search, setSearch] = useState('');
+    const [searchValue, setSearchValue] = useState('');
     const [parPage, setParPage] = useState(5);
-    const [show, setShow] = useState(false); // Hiển thị/ẩn form trên mobile
+    const [showForm, setShowForm] = useState(false);
+    const [imagePreview, setImagePreview] = useState('');
+    const [isEdit, setIsEdit] = useState(false);
+    const [editId, setEditId] = useState(null);
+
+    const [categoryData, setCategoryData] = useState({
+        name: '',
+        image: ''
+    });
+
+    // Xử lý chọn ảnh
+    const handleImageChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setImagePreview(URL.createObjectURL(file));
+            setCategoryData({
+                ...categoryData,
+                image: file // Lưu file mới
+            });
+        }
+    };
+    // Thêm hoặc cập nhật danh mục
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!categoryData.name || !categoryData.name.trim()) {
+            toast.error('Vui lòng nhập tên danh mục');
+            return;
+        }
+
+        if (!isEdit && !categoryData.image) {
+            toast.error('Vui lòng chọn hình ảnh');
+            return;
+        }
+
+        try {
+            if (isEdit) {
+                await dispatch(updateCategory({
+                    id: editId,
+                    name: categoryData.name,
+                    image: categoryData.image
+                })).unwrap();
+            } else {
+                await dispatch(categoryAdd({
+                    name: categoryData.name,
+                    image: categoryData.image
+                })).unwrap();
+            }
+            resetForm();
+        } catch (error) {
+            toast.error(error.error || 'Có lỗi xảy ra');
+        }
+    };
+
+    // Hiển thị thông báo
+    useEffect(() => {
+        if (successMessage) {
+            toast.success(successMessage);
+            resetForm();
+            dispatch(messageClear());
+        }
+        if (errorMessage) {
+            toast.error(errorMessage);
+            dispatch(messageClear());
+        }
+    }, [successMessage, errorMessage, dispatch]);
+
+    // Lấy danh sách danh mục
+    useEffect(() => {
+        const params = {
+            parPage: parseInt(parPage),
+            page: parseInt(currentPage),
+            searchValue
+        };
+        dispatch(get_category(params));
+    }, [dispatch, searchValue, currentPage, parPage]);
+
+    // Reset form
+    const resetForm = () => {
+        setCategoryData({
+            name: '',
+            image: ''
+        });
+        setImagePreview('');
+        setIsEdit(false);
+        setEditId(null);
+        setShowForm(false);
+    };
+
+    // Chỉnh sửa danh mục
+    const handleEdit = (category) => {
+        setCategoryData({
+            name: category.name,
+            image: category.image // Lưu URL gốc ban đầu
+        });
+        setImagePreview(category.image);
+        setEditId(category._id);
+        setIsEdit(true);
+        setShowForm(true);
+    };
+
+    // Xóa danh mục
+    const handleDelete = (id) => {
+        if (window.confirm('Bạn có chắc chắn muốn xóa danh mục này?')) {
+            dispatch(deleteCategory(id));
+        }
+    };
 
     return (
-        <div className='px-2 sm:px-4 lg:px-7 pt-5'>
-            <div className='flex flex-col lg:flex-row w-full gap-4'>
-                {/* Bảng danh mục */}
-                <div className='w-full bg-white rounded-lg shadow-md p-4'>
-                    {/* Bộ lọc và tìm kiếm */}
-                    <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4'>
-                        <select
-                            onChange={(e) => setParPage(parseInt(e.target.value))}
-                            className='px-3 py-1.5 w-full sm:w-24 border border-gray-300 rounded-md bg-white text-gray-700 focus:ring-2 focus:ring-blue-400 outline-none text-sm'
-                        >
-                            <option value="5">5</option>
-                            <option value="10">10</option>
-                            <option value="15">15</option>
-                        </select>
-                        <input
-                            className='px-3 py-1.5 w-full sm:w-64 border border-gray-300 rounded-md bg-white text-gray-700 focus:ring-2 focus:ring-blue-400 outline-none placeholder-gray-400 text-sm'
-                            type="text"
-                            placeholder='Tìm kiếm danh mục...'
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
-                    </div>
+        <div className="px-4 lg:px-8 py-6">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <h1 className="text-2xl font-bold text-gray-800">Quản lý Danh mục</h1>
+                <div className="flex items-center gap-4">
+                    <Search
+                        setParPage={setParPage}
+                        setSearchValue={setSearchValue}
+                        searchValue={searchValue}
+                        placeholder="Tìm kiếm danh mục..."
+                    />
+                    <button
+                        onClick={() => setShowForm(true)}
+                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
+                    >
+                        <FaPlus /> Thêm mới
+                    </button>
+                </div>
+            </div>
 
-                    {/* Bảng */}
-                    <div className="relative overflow-x-auto">
-                        <table className='w-full text-sm text-left text-gray-800'>
-                            <thead className='text-xs uppercase bg-gray-100 text-gray-600 border-b border-gray-200'>
-                            <tr>
-                                <th scope='col' className='py-2 px-2 sm:px-4'>TT</th>
-                                <th scope='col' className='py-2 px-2 sm:px-4'>Hình ảnh</th>
-                                <th scope='col' className='py-2 px-2 sm:px-4'>Tên</th>
-                                <th scope='col' className='py-2 px-2 sm:px-4 sm:table-cell'>Hành động</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {[1, 2, 3, 4, 5].map((item, i) => (
-                                <tr key={i} className='hover:bg-gray-50 border-b border-gray-200'>
-                                    <td className='py-2 px-2 sm:px-4 font-medium'>{item}</td>
-                                    <td className='py-2 px-2 sm:px-4'>
+            {/* Danh sách danh mục */}
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead className="bg-gray-100">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hình ảnh</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên danh mục</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+                        </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                        {categorys.length > 0 ? (
+                            categorys.map((category, index) => (
+                                <tr key={category._id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {(currentPage - 1) * parPage + index + 1}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
                                         <img
-                                            className='w-10 h-10 sm:w-12 sm:h-12 rounded-md object-cover'
-                                            src={`/images/category/${item}.jpg`}
-                                            alt={`Danh mục ${item}`}
+                                            src={category.image}
+                                            alt={category.name}
+                                            className="w-12 h-12 object-cover rounded-md"
                                         />
                                     </td>
-                                    <td className='py-2 px-2 sm:px-4 font-medium'>Sản phẩm {item}</td>
-                                    <td className='py-2 px-2 sm:px-4 hidden sm:table-cell'>
-                                        <div className='flex items-center gap-2'>
-                                            <Link
-                                                to='#'
-                                                className='p-1.5 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors'
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {category.name}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleEdit(category)}
+                                                className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-50 transition-colors"
                                                 title="Chỉnh sửa"
                                             >
                                                 <FaEdit />
-                                            </Link>
-                                            <Link
-                                                to='#'
-                                                className='p-1.5 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors'
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(category._id)}
+                                                className="text-red-600 hover:text-red-900 p-2 rounded-full hover:bg-red-50 transition-colors"
                                                 title="Xóa"
                                             >
-                                                <MdDeleteForever />
-                                            </Link>
-                                        </div>
-                                    </td>
-                                    {/* Hành động trên mobile */}
-                                    <td className='py-2 px-2 sm:hidden'>
-                                        <div className='flex items-center gap-1'>
-                                            <Link to='#' className='p-1 bg-blue-500 text-white rounded hover:bg-blue-600'>
-                                                <FaEdit size={14} />
-                                            </Link>
-                                            <Link to='#' className='p-1 bg-red-500 text-white rounded hover:bg-red-600'>
-                                                <MdDeleteForever size={14} />
-                                            </Link>
+                                                <FaTrash />
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
+                                    Không tìm thấy danh mục nào
+                                </td>
+                            </tr>
+                        )}
+                        </tbody>
+                    </table>
+                </div>
 
-                    {/* Phân trang */}
-                    <div className='mt-4'>
+                {/* Phân trang */}
+                {totalCategory > parPage && (
+                    <div className="px-6 py-4 border-t border-gray-200">
                         <Pagination
                             pageNumber={currentPage}
                             setPageNumber={setCurrentPage}
-                            totalItem={50}
+                            totalItem={totalCategory}
                             parPage={parPage}
-                            showItem={Math.min(parPage, 50)}
+                            showItem={3}
                         />
                     </div>
-                </div>
+                )}
+            </div>
 
-                {/* Form thêm danh mục */}
-                <div
-                    className={`w-full lg:w-5/12 bg-gray-100 p-4 rounded-lg shadow-md ${show ? 'block' : 'hidden lg:block'}`}
-                >
-                    <div className='w-full'>
-                        <h2 className='text-lg font-semibold text-gray-800 mb-4 text-center'>Thêm danh mục</h2>
-                        <form>
-                            <div className='mb-4'>
-                                <label htmlFor="name" className='block text-gray-700 font-medium text-sm mb-1'>Tên danh mục</label>
+            {/* Form thêm/chỉnh sửa danh mục */}
+            {showForm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+                        <div className="flex justify-between items-center border-b px-6 py-4">
+                            <h2 className="text-lg font-semibold text-gray-800">
+                                {isEdit ? 'Chỉnh sửa Danh mục' : 'Thêm Danh mục mới'}
+                            </h2>
+                            <button
+                                onClick={resetForm}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                <IoMdClose size={24} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="p-6">
+                            <div className="mb-4">
+                                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Tên danh mục
+                                </label>
                                 <input
-                                    className='w-full px-3 py-1.5 border border-gray-300 rounded-md text-gray-700 focus:ring-2 focus:ring-blue-400 outline-none placeholder-gray-400 text-sm'
                                     type="text"
-                                    id='name'
-                                    name='danh_muc'
-                                    placeholder='Nhập tên danh mục'
+                                    id="name"
+                                    value={categoryData.name}
+                                    onChange={(e) => setCategoryData({...categoryData, name: e.target.value})}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="Nhập tên danh mục"
+                                    required
                                 />
                             </div>
 
-                            <div className='mb-4'>
-                                <label
-                                    className='flex justify-center items-center flex-col h-40 w-full border-2 border-dashed border-gray-300 rounded-md cursor-pointer hover:border-blue-400 transition-colors'
-                                    htmlFor='image'
-                                >
-                                    <FaImage className='text-2xl text-gray-500 mb-2' />
-                                    <span className='text-gray-600 text-sm'>Chọn hình ảnh</span>
-                                    <input className='hidden' type="file" name='image' id='image' />
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Hình ảnh
                                 </label>
+                                <label
+                                    htmlFor="image-upload"
+                                    className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 transition-colors"
+                                >
+                                    {imagePreview ? (
+                                        <img
+                                            src={imagePreview}
+                                            alt="Preview"
+                                            className="w-full h-full object-cover rounded-lg"
+                                        />
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center text-gray-400">
+                                            <FaImage size={32} className="mb-2" />
+                                            <span>Chọn hình ảnh</span>
+                                        </div>
+                                    )}
+                                </label>
+                                <input
+                                    id="image-upload"
+                                    type="file"
+                                    onChange={handleImageChange}
+                                    className="hidden"
+                                    accept="image/*"
+                                />
                             </div>
 
-                            <button
-                                type='submit'
-                                className='w-full py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg text-sm'
-                            >
-                                Thêm danh mục
-                            </button>
+                            <div className="mt-6">
+                                <button
+                                    type="submit"
+                                    disabled={loader}
+                                    className={`w-full py-2 px-4 rounded-md text-white font-medium ${loader ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'} transition-colors`}
+                                >
+                                    {loader ? (
+                                        <PropagateLoader
+                                            color="#ffffff"
+                                            cssOverride={overrideStyle}
+                                            size={10}
+                                        />
+                                    ) : isEdit ? (
+                                        'Cập nhật Danh mục'
+                                    ) : (
+                                        'Thêm Danh mục'
+                                    )}
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>
-
-                {/* Nút toggle form trên mobile */}
-                <button
-                    onClick={() => setShow(!show)}
-                    className='lg:hidden fixed bottom-4 right-4 p-2 bg-red-300 text-white rounded-full shadow-md hover:bg-blue-700 transition-colors text-sm'
-                >
-                    {show ? 'Ẩn' : 'Thêm Danh Mục'}
-                </button>
-            </div>
+            )}
         </div>
     );
 };
