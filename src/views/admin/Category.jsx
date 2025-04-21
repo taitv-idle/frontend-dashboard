@@ -44,17 +44,25 @@ const Category = () => {
             });
         }
     };
+
     // Thêm hoặc cập nhật danh mục
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // Loại bỏ thông báo lỗi cục bộ, để backend xử lý tất cả lỗi
         if (!categoryData.name || !categoryData.name.trim()) {
-            toast.error('Vui lòng nhập tên danh mục');
+            dispatch({
+                type: 'category/categoryAdd/rejected',
+                payload: { error: 'Vui lòng nhập tên danh mục' }
+            });
             return;
         }
 
         if (!isEdit && !categoryData.image) {
-            toast.error('Vui lòng chọn hình ảnh');
+            dispatch({
+                type: 'category/categoryAdd/rejected',
+                payload: { error: 'Vui lòng chọn hình ảnh' }
+            });
             return;
         }
 
@@ -71,21 +79,23 @@ const Category = () => {
                     image: categoryData.image
                 })).unwrap();
             }
-            resetForm();
         } catch (error) {
-            toast.error(error.error || 'Có lỗi xảy ra');
+            // Lỗi đã được xử lý trong reducer, không cần toast ở đây
         }
     };
 
     // Hiển thị thông báo
     useEffect(() => {
         if (successMessage) {
-            toast.success(successMessage);
-            resetForm();
+            toast.success(successMessage, {
+                id: 'category-success' // Đảm bảo chỉ một toast thành công
+            });
             dispatch(messageClear());
         }
         if (errorMessage) {
-            toast.error(errorMessage);
+            toast.error(errorMessage, {
+                id: 'category-error' // Đảm bảo chỉ một toast lỗi
+            });
             dispatch(messageClear());
         }
     }, [successMessage, errorMessage, dispatch]);
