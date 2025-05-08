@@ -17,9 +17,9 @@ const Success = () => {
     const queryParams = new URLSearchParams(window.location.search)
     const activeCode = queryParams.get('activeCode')
 
-    useEffect(()=> {
+    useEffect(() => {
         dispatch(active_stripe_connect_account(activeCode))
-    },[activeCode]) 
+    }, [activeCode, dispatch]) 
 
     const redirect = () => {
         dispatch(messageClear())
