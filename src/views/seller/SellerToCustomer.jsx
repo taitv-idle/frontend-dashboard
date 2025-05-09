@@ -102,7 +102,7 @@ const SellerToCustomer = () => {
                     {customers.map((customer) => (
                         <Link
                             key={customer.fdId}
-                            to={`/seller/dashboard/chat-customer/${customer.fdId}`}
+                            to={`/seller/chat-customer/${customer.fdId}`}
                             className={`flex items-center p-3 hover:bg-blue-50 ${customerId === customer.fdId ? 'bg-blue-100' : ''}`}
                         >
                             <div className="relative mr-3">

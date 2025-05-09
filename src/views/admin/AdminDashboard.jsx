@@ -338,7 +338,7 @@ const AdminDashboard = () => {
                                 </td>
                                 <td className='px-4 py-3'>
                                     <Link
-                                        to={`/admin/dashboard/order/details/${order._id}`}
+                                        to={`/admin/order/details/${order._id}`}
                                         className='text-blue-400 hover:text-blue-300 font-medium'
                                     >
                                         Chi tiết

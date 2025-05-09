@@ -115,7 +115,7 @@ const SellerRequest = () => {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <Link
-                                            to={`/admin/dashboard/seller/details/${seller._id}`}
+                                            to={`/admin/seller/details/${seller._id}`}
                                             className="text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-indigo-50 transition-colors inline-block"
                                             title="Xem chi tiết"
                                         >

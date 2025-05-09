@@ -177,7 +177,7 @@ const SellerDashboard = () => {
     //         </td>
     //         <td className="py-3 px-4">
     //             <Link
-    //                 to={`/seller/dashboard/order/details/${order._id}`}
+    //                 to={`/seller/order/details/${order._id}`}
     //                 className="text-blue-600 hover:text-blue-800 font-medium"
     //             >
     //                 View
@@ -330,7 +330,7 @@ const SellerDashboard = () => {
                                 </td>
                                 <td className="py-3 px-4">
                                     <Link
-                                        to={`/seller/dashboard/order/details/${order._id}`}
+                                        to={`/seller/order/details/${order._id}`}
                                         className="text-blue-600 hover:text-blue-800 font-medium"
                                     >
                                         Xem
