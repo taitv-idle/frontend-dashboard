@@ -40,15 +40,16 @@ export const get_products = createAsyncThunk(
   
 export const get_product = createAsyncThunk(
     'product/get_product',
-    async( productId ,{rejectWithValue, fulfillWithValue}) => {
-        
+    async(productId, {rejectWithValue, fulfillWithValue}) => {
         try {
-             
-            const {data} = await api.get(`/product-details/${productId}`,{withCredentials: true})
-            console.log(data)
+            const {data} = await api.get(`/product-details/${productId}`, {withCredentials: true})
+            console.log('API Response:', data);
+            if (data.product && typeof data.product.description === 'string') {
+                // Ensure description is properly formatted HTML if needed
+                data.product.description = data.product.description.trim();
+            }
             return fulfillWithValue(data)
         } catch (error) {
-            // console.log(error.response.data)
             return rejectWithValue(error.response.data)
         }
     }
@@ -245,6 +246,7 @@ export const productReducer = createSlice({
             })
             .addCase(get_product.fulfilled, (state, { payload }) => {
                 state.loading = false;
+                console.log('Product description from API:', payload.product?.description);
                 state.product = payload.product;
             })
 

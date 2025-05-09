@@ -11,40 +11,6 @@ import toast from 'react-hot-toast';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
-// Custom CSS for ReactQuill
-const quillStyles = `
-    .ql-editor img {
-        max-width: 300px;
-        max-height: 300px;
-        object-fit: contain;
-        margin: 10px 0;
-    }
-    .ql-editor {
-        min-height: 300px;
-        font-size: 16px;
-        line-height: 1.6;
-    }
-    .ql-container {
-        height: 400px;
-    }
-    .ql-toolbar {
-        border-top-left-radius: 0.5rem;
-        border-top-right-radius: 0.5rem;
-        background-color: #f9fafb;
-    }
-    .ql-container {
-        border-bottom-left-radius: 0.5rem;
-        border-bottom-right-radius: 0.5rem;
-    }
-    .ql-editor p {
-        margin-bottom: 1em;
-    }
-    .ql-editor h1, .ql-editor h2, .ql-editor h3 {
-        margin-top: 1em;
-        margin-bottom: 0.5em;
-    }
-`;
-
 const EditProduct = () => {
     const { productId } = useParams();
     const dispatch = useDispatch();
@@ -62,6 +28,8 @@ const EditProduct = () => {
         color: []
     });
 
+    const [editorContent, setEditorContent] = useState('');
+
     const [cateShow, setCateShow] = useState(false);
     const [category, setCategory] = useState('');
     const [allCategory, setAllCategory] = useState([]);
@@ -75,45 +43,21 @@ const EditProduct = () => {
 
     // Quill modules configuration
     const modules = {
-        toolbar: {
-            container: [
-                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                [{ 'color': [] }, { 'background': [] }],
-                ['link', 'image'],
-                ['clean']
-            ],
-            handlers: {
-                image: function() {
-                    const input = document.createElement('input');
-                    input.setAttribute('type', 'file');
-                    input.setAttribute('accept', 'image/*');
-                    input.click();
-
-                    input.onchange = async () => {
-                        const file = input.files[0];
-                        if (file) {
-                            try {
-                                const imageUrl = URL.createObjectURL(file);
-                                const quill = this.quill;
-                                const range = quill.getSelection() || { index: 0 };
-                                quill.insertEmbed(range.index, 'image', imageUrl);
-                                quill.insertText(range.index + 1, '\n');
-                            } catch (error) {
-                                console.error('Error inserting image:', error);
-                                toast.error('Không thể chèn ảnh. Vui lòng thử lại.');
-                            }
-                        }
-                    };
-                }
-            }
-        }
+        toolbar: [
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'align': [] }],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'color': [] }, { 'background': [] }],
+            ['link', 'image'],
+            ['clean']
+        ]
     };
 
     const formats = [
         'header',
         'bold', 'italic', 'underline', 'strike',
+        'align',
         'list', 'bullet',
         'link', 'image',
         'color', 'background'
@@ -131,16 +75,26 @@ const EditProduct = () => {
 
     useEffect(() => {
         if (product) {
-            setState({
+            console.log('Product data received:', product);
+            // Xử lý nội dung HTML từ API
+            const descriptionContent = product.description || '';
+            console.log('Setting initial description content:', descriptionContent);
+            
+            // Đảm bảo nội dung là HTML hợp lệ
+            const sanitizedContent = descriptionContent.trim() ? descriptionContent : '<p></p>';
+            setEditorContent(sanitizedContent);
+            
+            setState(prev => ({
+                ...prev,
                 name: product.name || "",
-                description: product.description || "",
+                description: sanitizedContent,
                 discount: product.discount || "",
                 price: product.price || "",
                 brand: product.brand || "",
                 stock: product.stock || "",
-                size: product.size || [],
-                color: product.color || []
-            });
+                size: Array.isArray(product.size) ? product.size : [],
+                color: Array.isArray(product.color) ? product.color : []
+            }));
             setCategory(product.category || "");
             setImageShow(product.images || []);
             setLoading(false);
@@ -224,8 +178,19 @@ const EditProduct = () => {
     };
 
     const handleDescriptionChange = useCallback((content) => {
-        setState(prev => ({ ...prev, description: content }));
-    }, []);
+        console.log('Description changed:', content);
+        console.log('Previous editor content:', editorContent);
+        setEditorContent(content);
+        setState(prev => ({
+            ...prev,
+            description: content
+        }));
+    }, [editorContent]);
+
+    // Add a debug effect for state changes
+    useEffect(() => {
+        console.log("Current state description:", state.description);
+    }, [state.description]);
 
     const update = (e) => {
         e.preventDefault();
@@ -238,8 +203,8 @@ const EditProduct = () => {
             stock: state.stock,
             category: category,
             productId: productId,
-            size: state.size,
-            color: state.color
+            size: JSON.stringify(state.size),
+            color: JSON.stringify(state.color)
         };
         dispatch(update_product(obj));
     };
@@ -254,7 +219,6 @@ const EditProduct = () => {
 
     return (
         <div className="px-4 lg:px-8 py-6">
-            <style>{quillStyles}</style>
             <div className="w-full p-6 bg-white rounded-lg shadow-md">
                 <div className="flex justify-between items-center pb-6 border-b border-gray-200">
                     <h1 className="text-2xl font-bold text-gray-800">Chỉnh Sửa Sản Phẩm</h1>
@@ -460,18 +424,77 @@ const EditProduct = () => {
                         </div>
                     </div>
 
-                    <div className="mb-6">
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">Mô Tả Sản Phẩm</label>
-                        <div className="mb-12">
+                    <div className='mb-6'>
+                        <label htmlFor="description" className='block text-sm font-medium text-gray-700 mb-2'>Mô Tả Sản Phẩm</label>
+                        <div className='editor-container'>
                             <ReactQuill
+                                key={productId}
                                 theme="snow"
-                                value={state.description}
+                                value={editorContent}
                                 onChange={handleDescriptionChange}
                                 modules={modules}
                                 formats={formats}
-                                preserveWhitespace={true}
                                 placeholder="Nhập mô tả chi tiết sản phẩm..."
+                                className="custom-quill-editor"
                             />
+                            <style>{`
+                                .editor-container {
+                                    height: 500px;
+                                    margin-bottom: 60px;
+                                    position: relative;
+                                }
+                                .custom-quill-editor {
+                                    height: 100%;
+                                    display: flex;
+                                    flex-direction: column;
+                                }
+                                .ql-toolbar {
+                                    border: 1px solid #e2e8f0;
+                                    border-radius: 8px 8px 0 0;
+                                    background: white;
+                                    position: sticky;
+                                    top: 0;
+                                    z-index: 1;
+                                }
+                                .ql-container {
+                                    font-size: 16px;
+                                    border: 1px solid #e2e8f0;
+                                    border-top: none;
+                                    border-radius: 0 0 8px 8px;
+                                    height: calc(100% - 42px);
+                                    background: white;
+                                    flex: 1;
+                                }
+                                .ql-editor {
+                                    min-height: 100%;
+                                    font-size: 16px;
+                                    line-height: 1.6;
+                                    padding: 20px;
+                                    overflow-y: auto;
+                                }
+                                .ql-editor p {
+                                    margin-bottom: 1em;
+                                }
+                                .ql-editor img {
+                                    max-width: 100%;
+                                    height: auto;
+                                    max-height: 400px;
+                                    display: block;
+                                    margin: 10px auto;
+                                }
+                                .ql-editor * {
+                                    white-space: pre-wrap;
+                                }
+                                .ql-editor.ql-blank::before {
+                                    color: #a0aec0;
+                                    font-style: normal;
+                                }
+                                .ql-editor:focus {
+                                    outline: none;
+                                    border-color: #4f46e5;
+                                    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+                                }
+                            `}</style>
                         </div>
                     </div>
 

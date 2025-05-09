@@ -11,40 +11,6 @@ import toast from 'react-hot-toast';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
-// Custom CSS for ReactQuill
-const quillStyles = `
-    .ql-editor img {
-        max-width: 300px;
-        max-height: 300px;
-        object-fit: contain;
-        margin: 10px 0;
-    }
-    .ql-editor {
-        min-height: 300px;
-        font-size: 16px;
-        line-height: 1.6;
-    }
-    .ql-container {
-        height: 400px;
-    }
-    .ql-toolbar {
-        border-top-left-radius: 0.5rem;
-        border-top-right-radius: 0.5rem;
-        background-color: #f9fafb;
-    }
-    .ql-container {
-        border-bottom-left-radius: 0.5rem;
-        border-bottom-right-radius: 0.5rem;
-    }
-    .ql-editor p {
-        margin-bottom: 1em;
-    }
-    .ql-editor h1, .ql-editor h2, .ql-editor h3 {
-        margin-top: 1em;
-        margin-bottom: 0.5em;
-    }
-`;
-
 const AddProduct = () => {
     const dispatch = useDispatch();
     const { categorys = [] } = useSelector(state => state.category);
@@ -75,45 +41,21 @@ const AddProduct = () => {
 
     // Quill modules configuration
     const modules = {
-        toolbar: {
-            container: [
-                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                [{ 'color': [] }, { 'background': [] }],
-                ['link', 'image'],
-                ['clean']
-            ],
-            handlers: {
-                image: function() {
-                    const input = document.createElement('input');
-                    input.setAttribute('type', 'file');
-                    input.setAttribute('accept', 'image/*');
-                    input.click();
-
-                    input.onchange = async () => {
-                        const file = input.files[0];
-                        if (file) {
-                            try {
-                                const imageUrl = URL.createObjectURL(file);
-                                const quill = this.quill;
-                                const range = quill.getSelection() || { index: 0 };
-                                quill.insertEmbed(range.index, 'image', imageUrl);
-                                quill.insertText(range.index + 1, '\n');
-                            } catch (error) {
-                                console.error('Error inserting image:', error);
-                                toast.error('Không thể chèn ảnh. Vui lòng thử lại.');
-                            }
-                        }
-                    };
-                }
-            }
-        }
+        toolbar: [
+            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'align': [] }],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'color': [] }, { 'background': [] }],
+            ['link', 'image'],
+            ['clean']
+        ]
     };
 
     const formats = [
         'header',
         'bold', 'italic', 'underline', 'strike',
+        'align',
         'list', 'bullet',
         'link', 'image',
         'color', 'background'
@@ -278,7 +220,6 @@ const AddProduct = () => {
 
     return (
         <div className='px-4 lg:px-8 py-6'>
-            <style>{quillStyles}</style>
             <div className='w-full p-6 bg-white rounded-lg shadow-md'>
                 <div className='flex justify-between items-center pb-6 border-b border-gray-200'>
                     <h1 className='text-2xl font-bold text-gray-800'>Thêm Sản Phẩm Mới</h1>
@@ -482,16 +423,79 @@ const AddProduct = () => {
 
                     <div className='mb-6'>
                         <label htmlFor="description" className='block text-sm font-medium text-gray-700 mb-2'>Mô Tả Sản Phẩm</label>
-                        <div className='mb-12'>
+                        <div className='editor-container'>
                             <ReactQuill
                                 theme="snow"
                                 value={state.description}
                                 onChange={handleDescriptionChange}
                                 modules={modules}
                                 formats={formats}
-                                preserveWhitespace={true}
                                 placeholder="Nhập mô tả chi tiết sản phẩm..."
+                                className="custom-quill-editor"
                             />
+                            <style>{`
+                                .editor-container {
+                                    height: 400px;
+                                    margin-bottom: 60px;
+                                    border-radius: 8px;
+                                    overflow: hidden;
+                                }
+                                .custom-quill-editor {
+                                    height: 100%;
+                                    display: flex;
+                                    flex-direction: column;
+                                }
+                                .ql-container {
+                                    font-size: 16px;
+                                    flex: 1;
+                                    overflow-y: auto;
+                                }
+                                .ql-toolbar {
+                                    background: #fff;
+                                    border: 1px solid #e2e8f0;
+                                    border-top-left-radius: 8px;
+                                    border-top-right-radius: 8px;
+                                }
+                                .ql-container {
+                                    border: 1px solid #e2e8f0;
+                                    border-top: none;
+                                    border-bottom-left-radius: 8px;
+                                    border-bottom-right-radius: 8px;
+                                }
+                                .ql-editor {
+                                    min-height: 300px;
+                                    max-height: none;
+                                    overflow-y: auto;
+                                    line-height: 1.6;
+                                    padding: 12px 15px;
+                                }
+                                .ql-editor img {
+                                    max-width: 100%;
+                                    height: auto;
+                                    max-height: 300px;
+                                    object-fit: contain;
+                                    margin: 10px auto;
+                                    display: block;
+                                }
+                                .ql-editor p {
+                                    margin-bottom: 1em;
+                                }
+                                /* Tùy chỉnh thanh cuộn */
+                                .ql-editor::-webkit-scrollbar {
+                                    width: 8px;
+                                }
+                                .ql-editor::-webkit-scrollbar-track {
+                                    background: #f1f1f1;
+                                    border-radius: 4px;
+                                }
+                                .ql-editor::-webkit-scrollbar-thumb {
+                                    background: #c1c1c1;
+                                    border-radius: 4px;
+                                }
+                                .ql-editor::-webkit-scrollbar-thumb:hover {
+                                    background: #a8a8a8;
+                                }
+                            `}</style>
                         </div>
                     </div>
 

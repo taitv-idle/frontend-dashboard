@@ -68,8 +68,8 @@ const OrderDetails = () => {
                     <div>
                         <h2 className="text-2xl font-bold text-gray-800">Chi tiết đơn hàng</h2>
                         <div className="flex items-center mt-2 text-gray-600">
-                            <span className="mr-4">Mã đơn: #{order._id}</span>
-                            <span>Ngày: {order.date}</span>
+                            <span className="mr-4">Mã đơn: #{order?._id || 'N/A'}</span>
+                            <span>Ngày: {order?.date || 'N/A'}</span>
                         </div>
                     </div>
 
@@ -99,9 +99,9 @@ const OrderDetails = () => {
                                 Thông tin giao hàng
                             </h3>
                             <div className="space-y-2 text-gray-700">
-                                <p><span className="font-medium">Người nhận:</span> {order.shippingInfo?.name}</p>
-                                <p><span className="font-medium">Địa chỉ:</span> {order.shippingInfo?.address}</p>
-                                <p><span className="font-medium">SĐT:</span> {order.shippingInfo?.phone}</p>
+                                <p><span className="font-medium">Người nhận:</span> {order?.shippingInfo?.name || 'N/A'}</p>
+                                <p><span className="font-medium">Địa chỉ:</span> {order?.shippingInfo?.address || 'N/A'}</p>
+                                <p><span className="font-medium">SĐT:</span> {order?.shippingInfo?.phone || 'N/A'}</p>
                             </div>
                         </div>
 
@@ -113,15 +113,15 @@ const OrderDetails = () => {
                                     <div key={i} className="flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                         <img
                                             className="w-16 h-16 object-cover rounded-md mr-4"
-                                            src={p.images[0]}
-                                            alt={p.name}
+                                            src={p?.images?.[0] || '/placeholder-image.png'}
+                                            alt={p?.name || 'Product image'}
                                         />
                                         <div className="flex-1">
-                                            <h4 className="font-medium text-gray-800">{p.name}</h4>
-                                            <p className="text-sm text-gray-600">Thương hiệu: {p.brand}</p>
-                                            <p className="text-sm text-gray-600">Số lượng: {p.quantity}</p>
+                                            <h4 className="font-medium text-gray-800">{p?.name || 'Unnamed Product'}</h4>
+                                            <p className="text-sm text-gray-600">Thương hiệu: {p?.brand || 'N/A'}</p>
+                                            <p className="text-sm text-gray-600">Số lượng: {p?.quantity || 0}</p>
                                             <p className="text-sm font-medium text-indigo-600 mt-1">
-                                                ${(p.price * p.quantity).toFixed(2)}
+                                                ${((p?.price || 0) * (p?.quantity || 0)).toFixed(2)}
                                             </p>
                                         </div>
                                     </div>
