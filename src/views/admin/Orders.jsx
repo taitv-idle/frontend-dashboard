@@ -57,7 +57,6 @@ const Orders = () => {
                 </div>
 
                 {/* Orders Table */}
-                {/* Orders Table */}
                 <div className='relative overflow-x-auto rounded-lg border border-indigo-400'>
                     <table className='w-full text-left text-white'>
                         <thead className='bg-indigo-800'>
@@ -76,7 +75,7 @@ const Orders = () => {
                                 <React.Fragment key={order._id}>
                                     <tr className='border-b border-indigo-500 hover:bg-indigo-600/50 transition-colors'>
                                         <td className='px-6 py-4 font-medium'>#{order._id}</td>
-                                        <td className='px-6 py-4'>${order.price}</td>
+                                        <td className='px-6 py-4'>{order.price?.toLocaleString()} VND</td>
                                         <td className='px-6 py-4'>
                                 <span className={`px-3 py-1 rounded-full text-xs ${
                                     order.payment_status === 'completed'
@@ -92,11 +91,20 @@ const Orders = () => {
                                         ? 'bg-green-600 text-green-100'
                                         : order.delivery_status === 'processing'
                                             ? 'bg-blue-600 text-blue-100'
-                                            : 'bg-orange-600 text-orange-100'
+                                            : order.delivery_status === 'warehouse'
+                                                ? 'bg-purple-600 text-purple-100'
+                                                : order.delivery_status === 'placed'
+                                                    ? 'bg-indigo-600 text-indigo-100'
+                                                    : order.delivery_status === 'cancelled'
+                                                        ? 'bg-red-600 text-red-100'
+                                                        : 'bg-orange-600 text-orange-100'
                                 }`}>
                                     {order.delivery_status === 'delivered' ? 'Đã giao' :
                                         order.delivery_status === 'processing' ? 'Đang xử lý' :
-                                            'Đang vận chuyển'}
+                                            order.delivery_status === 'warehouse' ? 'Trong kho' :
+                                                order.delivery_status === 'placed' ? 'Đã đặt' :
+                                                    order.delivery_status === 'cancelled' ? 'Đã hủy' :
+                                                        'Chờ xử lý'}
                                 </span>
                                         </td>
                                         <td className='px-6 py-4'>
@@ -128,7 +136,7 @@ const Orders = () => {
                                                     {order.suborder.map((subOrder) => (
                                                         <div key={subOrder._id} className='flex items-center justify-between bg-indigo-800/50 p-3 rounded-lg'>
                                                             <span className='text-sm'>#{subOrder._id}</span>
-                                                            <span className='text-sm'>${subOrder.price}</span>
+                                                            <span className='text-sm'>{subOrder.price?.toLocaleString()} VND</span>
                                                             <span className={`px-2 py-1 rounded-full text-xs ${
                                                                 subOrder.payment_status === 'completed'
                                                                     ? 'bg-green-600 text-green-100'

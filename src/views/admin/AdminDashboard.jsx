@@ -190,7 +190,7 @@ const AdminDashboard = () => {
                 {/* Thẻ tổng doanh thu */}
                 <div className='flex justify-between items-center p-5 bg-gradient-to-r from-red-500 to-red-600 rounded-lg shadow-lg'>
                     <div className='flex flex-col justify-start items-start text-white'>
-                        <h2 className='text-3xl font-bold'>${totalSale}</h2>
+                        <h2 className='text-3xl font-bold'>{totalSale?.toLocaleString()} VND</h2>
                         <span className='text-sm font-medium'>Tổng doanh thu</span>
                     </div>
                     <div className='w-12 h-12 rounded-full bg-white bg-opacity-20 flex justify-center items-center text-xl'>
@@ -317,7 +317,7 @@ const AdminDashboard = () => {
                         {recentOrder.map((order, index) => (
                             <tr key={index} className='border-b border-gray-700 hover:bg-gray-700'>
                                 <td className='px-4 py-3 font-medium text-white'>#{order._id}</td>
-                                <td className='px-4 py-3'>${order.price}</td>
+                                <td className='px-4 py-3'>{order.price?.toLocaleString()} VND</td>
                                 <td className='px-4 py-3'>
                                         <span className={`px-2 py-1 rounded-full text-xs ${
                                             order.payment_status === 'completed'

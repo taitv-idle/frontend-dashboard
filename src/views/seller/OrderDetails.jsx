@@ -9,22 +9,69 @@ const OrderDetails = () => {
     const { orderId } = useParams();
     const dispatch = useDispatch();
     const [status, setStatus] = useState('');
-
+    const [loading, setLoading] = useState(true);
     const { order, errorMessage, successMessage } = useSelector(state => state.order);
 
-    useEffect(() => {
-        setStatus(order?.delivery_status);
-    }, [order]);
-
-    useEffect(() => {
-        dispatch(get_seller_order(orderId));
-    }, [orderId, dispatch]);
-
-    const status_update = (e) => {
-        dispatch(seller_order_status_update({ orderId, info: { status: e.target.value } }));
-        setStatus(e.target.value);
+    // Hàm xử lý URL hình ảnh
+    const getImageUrl = (image) => {
+        if (!image) return '/placeholder-product.png';
+        
+        // Nếu là URL đầy đủ
+        if (typeof image === 'string' && image.startsWith('http')) {
+            return image;
+        }
+        
+        // Nếu là object từ Cloudinary
+        if (typeof image === 'object' && image.url) {
+            return image.url;
+        }
+        
+        // Nếu là object từ Cloudinary với secure_url
+        if (typeof image === 'object' && image.secure_url) {
+            return image.secure_url;
+        }
+        
+        // Nếu là object từ Cloudinary với public_id
+        if (typeof image === 'object' && image.public_id) {
+            return `https://res.cloudinary.com/your-cloud-name/image/upload/${image.public_id}`;
+        }
+        
+        return '/placeholder-product.png';
     };
 
+    // Fetch order details when component mounts or orderId changes
+    useEffect(() => {
+        const fetchOrder = async () => {
+            try {
+                setLoading(true);
+                await dispatch(get_seller_order(orderId));
+            } catch (error) {
+                toast.error('Lỗi khi tải chi tiết đơn hàng');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchOrder();
+    }, [orderId, dispatch]);
+
+    // Update local status when order data changes
+    useEffect(() => {
+        if (order?.delivery_status) {
+            setStatus(order.delivery_status);
+        }
+    }, [order]);
+
+    // Handle status update
+    const status_update = (e) => {
+        const newStatus = e.target.value;
+        dispatch(seller_order_status_update({
+            orderId,
+            info: { status: newStatus }
+        }));
+        setStatus(newStatus);
+    };
+
+    // Show toast messages
     useEffect(() => {
         if (successMessage) {
             toast.success(successMessage);
@@ -50,15 +97,107 @@ const OrderDetails = () => {
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'pending': return 'bg-yellow-100 text-yellow-800';
-            case 'processing': return 'bg-blue-100 text-blue-800';
-            case 'warehouse': return 'bg-purple-100 text-purple-800';
-            case 'placed': return 'bg-indigo-100 text-indigo-800';
-            case 'cancelled': return 'bg-red-100 text-red-800';
-            case 'delivered': return 'bg-green-100 text-green-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'pending':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'processing':
+                return 'bg-blue-100 text-blue-800';
+            case 'warehouse':
+                return 'bg-purple-100 text-purple-800';
+            case 'placed':
+                return 'bg-indigo-100 text-indigo-800';
+            case 'delivered':
+                return 'bg-green-100 text-green-800';
+            case 'cancelled':
+                return 'bg-red-100 text-red-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
         }
     };
+
+    const getStatusText = (status) => {
+        switch (status) {
+            case 'pending':
+                return 'Chờ xử lý';
+            case 'processing':
+                return 'Đang xử lý';
+            case 'warehouse':
+                return 'Trong kho';
+            case 'placed':
+                return 'Đã đặt';
+            case 'delivered':
+                return 'Đã giao';
+            case 'cancelled':
+                return 'Đã hủy';
+            default:
+                return status;
+        }
+    };
+
+    const formatPrice = (price) => {
+        if (!price && price !== 0) return '0 ₫';
+        return `${price.toLocaleString('vi-VN')} ₫`;
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString('vi-VN', options);
+    };
+
+    const getPaymentMethodText = (method) => {
+        switch (method) {
+            case 'cod':
+                return 'Thanh toán khi nhận hàng (COD)';
+            case 'stripe':
+                return 'Thanh toán online (Stripe)';
+            default:
+                return method;
+        }
+    };
+
+    const getPaymentStatusText = (status) => {
+        switch (status) {
+            case 'pending':
+                return 'Chờ thanh toán';
+            case 'paid':
+                return 'Đã thanh toán';
+            case 'unpaid':
+                return 'Chưa thanh toán';
+            default:
+                return status;
+        }
+    };
+
+    const getPaymentStatusColor = (status) => {
+        switch (status) {
+            case 'pending':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'paid':
+                return 'bg-green-100 text-green-800';
+            case 'unpaid':
+                return 'bg-red-100 text-red-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    };
+
+    // Loading state
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+            </div>
+        );
+    }
+
+    // Error state - order not found
+    if (!order || !order._id) {
+        return (
+            <div className="text-center py-10">
+                <h3 className="text-xl text-indigo-200">Không tìm thấy đơn hàng</h3>
+            </div>
+        );
+    }
 
     return (
         <div className="px-4 lg:px-8 py-6">
@@ -68,30 +207,30 @@ const OrderDetails = () => {
                     <div>
                         <h2 className="text-2xl font-bold text-gray-800">Chi tiết đơn hàng</h2>
                         <div className="flex items-center mt-2 text-gray-600">
-                            <span className="mr-4">Mã đơn: #{order?._id || 'N/A'}</span>
-                            <span>Ngày: {order?.date || 'N/A'}</span>
+                            <span className="mr-4">Mã đơn: #{order._id}</span>
+                            <span>Ngày: {formatDate(order.date)}</span>
                         </div>
                     </div>
 
                     <div className="mt-4 md:mt-0">
                         <select
-                            onChange={status_update}
-                            value={status}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            value={order.delivery_status}
+                            onChange={(e) => status_update(e)}
+                            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                         >
                             <option value="pending">Chờ xử lý</option>
                             <option value="processing">Đang xử lý</option>
-                            <option value="warehouse">Tại kho</option>
-                            <option value="placed">Đang giao</option>
-                            <option value="cancelled">Đã hủy</option>
+                            <option value="warehouse">Trong kho</option>
+                            <option value="placed">Đã đặt</option>
                             <option value="delivered">Đã giao</option>
+                            <option value="cancelled">Đã hủy</option>
                         </select>
                     </div>
                 </div>
 
                 {/* Thông tin chính */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Thông tin giao hàng */}
+                    {/* Thông tin giao hàng và sản phẩm */}
                     <div className="lg:col-span-2">
                         <div className="bg-gray-50 p-4 rounded-lg">
                             <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
@@ -99,30 +238,56 @@ const OrderDetails = () => {
                                 Thông tin giao hàng
                             </h3>
                             <div className="space-y-2 text-gray-700">
-                                <p><span className="font-medium">Người nhận:</span> {order?.shippingInfo?.name || 'N/A'}</p>
-                                <p><span className="font-medium">Địa chỉ:</span> {order?.shippingInfo?.address || 'N/A'}</p>
-                                <p><span className="font-medium">SĐT:</span> {order?.shippingInfo?.phone || 'N/A'}</p>
+                                <p><span className="font-medium">Người nhận:</span> {order.shippingAddress?.name || 'N/A'}</p>
+                                <p><span className="font-medium">SĐT:</span> {order.shippingAddress?.phone || 'N/A'}</p>
+                                <p><span className="font-medium">Địa chỉ:</span> {order.shippingAddress?.address || 'N/A'}</p>
+                                <p><span className="font-medium">Tỉnh/Thành:</span> {order.shippingAddress?.province || 'N/A'}</p>
+                                <p><span className="font-medium">Quận/Huyện:</span> {order.shippingAddress?.city || 'N/A'}</p>
+                                <p><span className="font-medium">Phường/Xã:</span> {order.shippingAddress?.area || 'N/A'}</p>
+                                {order.shippingAddress?.post && (
+                                    <p><span className="font-medium">Mã bưu điện:</span> {order.shippingAddress.post}</p>
+                                )}
                             </div>
                         </div>
 
-                        {/* Sản phẩm */}
+                        {/* Sản phẩm đã đặt */}
                         <div className="mt-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-3">Sản phẩm đã đặt</h3>
                             <div className="space-y-4">
-                                {order?.products?.map((p, i) => (
-                                    <div key={i} className="flex items-start p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                                        <img
-                                            className="w-16 h-16 object-cover rounded-md mr-4"
-                                            src={p?.images?.[0] || '/placeholder-image.png'}
-                                            alt={p?.name || 'Product image'}
-                                        />
-                                        <div className="flex-1">
-                                            <h4 className="font-medium text-gray-800">{p?.name || 'Unnamed Product'}</h4>
-                                            <p className="text-sm text-gray-600">Thương hiệu: {p?.brand || 'N/A'}</p>
-                                            <p className="text-sm text-gray-600">Số lượng: {p?.quantity || 0}</p>
-                                            <p className="text-sm font-medium text-indigo-600 mt-1">
-                                                ${((p?.price || 0) * (p?.quantity || 0)).toFixed(2)}
-                                            </p>
+                                {order.products?.map((product, index) => (
+                                    <div key={index} className="flex items-start p-4 bg-white rounded-lg shadow-sm border border-gray-200">
+                                        <div className="flex-shrink-0 w-20 h-20">
+                                            <img
+                                                src={getImageUrl(product.productId?.images?.[0])}
+                                                alt={product.productId?.name}
+                                                className="w-full h-full object-cover rounded-md"
+                                                onError={(e) => {
+                                                    e.target.onerror = null;
+                                                    e.target.src = '/placeholder-product.png';
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="flex-1 min-w-0 ml-4">
+                                            <p className="text-sm font-medium text-gray-900 truncate">{product.productId?.name || 'Sản phẩm không tên'}</p>
+                                            <p className="text-sm text-gray-500">Thương hiệu: {product.productId?.brand || 'N/A'}</p>
+                                            <div className="mt-2 flex items-center justify-between">
+                                                <div className="flex items-center space-x-4">
+                                                    <p className="text-sm text-gray-500">Số lượng: {product.productId?.quantity || 0}</p>
+                                                    <div className="flex items-center space-x-2">
+                                                        {product.productId?.discount > 0 && (
+                                                            <p className="text-sm text-gray-500 line-through">
+                                                                {formatPrice(product.productId?.price || 0)}
+                                                            </p>
+                                                        )}
+                                                        <p className="text-sm text-gray-500">
+                                                            Đơn giá: {formatPrice(product.productId?.discount ? (product.productId?.price * (1 - product.productId?.discount/100)) : product.productId?.price)}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <p className="text-sm font-medium text-indigo-600">
+                                                    Thành tiền: {formatPrice((product.productId?.discount ? (product.productId?.price * (1 - product.productId?.discount/100)) : product.productId?.price) * (product.productId?.quantity || 0))}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -135,26 +300,35 @@ const OrderDetails = () => {
                         <div className="bg-gray-50 p-4 rounded-lg sticky top-4">
                             <h3 className="text-lg font-semibold text-gray-800 mb-4">Tóm tắt đơn hàng</h3>
 
-                            <div className="space-y-3 mb-4">
-                                <div className="flex justify-between">
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
                                     <span className="text-gray-600">Tạm tính:</span>
-                                    <span>${order.price?.toFixed(2)}</span>
+                                    <span className="font-medium">{formatPrice(order.price - (order.shipping_fee || 0))}</span>
                                 </div>
-                                <div className="flex justify-between">
+                                <div className="flex justify-between items-center">
                                     <span className="text-gray-600">Phí vận chuyển:</span>
-                                    <span>$0.00</span>
+                                    <span className="font-medium">{formatPrice(order.shipping_fee || 0)}</span>
                                 </div>
-                                <div className="flex justify-between font-medium text-gray-800 border-t pt-3">
-                                    <span>Tổng cộng:</span>
-                                    <span>${order.price?.toFixed(2)}</span>
+                                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                                    <span className="text-lg font-semibold text-gray-900">Tổng cộng:</span>
+                                    <span className="text-lg font-semibold text-indigo-600">{formatPrice(order.price)}</span>
                                 </div>
                             </div>
 
                             <div className="mt-4">
                                 <h4 className="font-medium text-gray-800 mb-2">Trạng thái thanh toán</h4>
-                                <span className={`px-3 py-1 rounded-full text-sm ${order.payment_status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                    {order.payment_status === 'completed' ? 'Đã thanh toán' : 'Chưa thanh toán'}
-                                </span>
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm text-gray-600">Phương thức thanh toán</p>
+                                        <p className="font-medium">{getPaymentMethodText(order.payment_method)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Trạng thái thanh toán</p>
+                                        <span className={`px-3 py-1 rounded-full text-sm ${getPaymentStatusColor(order.payment_status)}`}>
+                                            {getPaymentStatusText(order.payment_status)}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="mt-4">
@@ -162,12 +336,7 @@ const OrderDetails = () => {
                                 <div className="flex items-center">
                                     <span className={`px-3 py-1 rounded-full text-sm ${getStatusColor(status)}`}>
                                         {getStatusIcon(status)}
-                                        {status === 'pending' && 'Chờ xử lý'}
-                                        {status === 'processing' && 'Đang xử lý'}
-                                        {status === 'warehouse' && 'Tại kho'}
-                                        {status === 'placed' && 'Đang giao'}
-                                        {status === 'cancelled' && 'Đã hủy'}
-                                        {status === 'delivered' && 'Đã giao'}
+                                        {getStatusText(status)}
                                     </span>
                                 </div>
                             </div>
