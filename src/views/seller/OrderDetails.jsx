@@ -9,6 +9,7 @@ const OrderDetails = () => {
     const { orderId } = useParams();
     const dispatch = useDispatch();
     const [status, setStatus] = useState('');
+    const [paymentStatus, setPaymentStatus] = useState('');
     const [loading, setLoading] = useState(true);
     const { order, errorMessage, successMessage } = useSelector(state => state.order);
 
@@ -56,19 +57,46 @@ const OrderDetails = () => {
 
     // Update local status when order data changes
     useEffect(() => {
-        if (order?.delivery_status) {
-            setStatus(order.delivery_status);
+        if (order) {
+            if (order.delivery_status) {
+                setStatus(order.delivery_status);
+            }
+            if (order.payment_status) {
+                setPaymentStatus(order.payment_status);
+            }
         }
     }, [order]);
 
     // Handle status update
-    const status_update = (e) => {
+    const status_update = async (e) => {
         const newStatus = e.target.value;
-        dispatch(seller_order_status_update({
-            orderId,
-            info: { status: newStatus }
-        }));
-        setStatus(newStatus);
+        try {
+            await dispatch(seller_order_status_update({
+                orderId,
+                info: { status: newStatus }
+            }));
+            setStatus(newStatus);
+            // Fetch updated order data
+            await dispatch(get_seller_order(orderId));
+        } catch (error) {
+            toast.error('Lỗi khi cập nhật trạng thái đơn hàng');
+        }
+    };
+
+    // Handle payment status update
+    const payment_status_update = async (e) => {
+        const newStatus = e.target.value;
+        try {
+            await dispatch(seller_order_status_update({
+                orderId,
+                info: { payment_status: newStatus }
+            }));
+            setPaymentStatus(newStatus);
+            // Fetch updated order data
+            await dispatch(get_seller_order(orderId));
+        } catch (error) {
+            toast.error('Lỗi khi cập nhật trạng thái thanh toán');
+        }
     };
 
     // Show toast messages
@@ -214,7 +242,7 @@ const OrderDetails = () => {
 
                     <div className="mt-4 md:mt-0">
                         <select
-                            value={order.delivery_status}
+                            value={status}
                             onChange={(e) => status_update(e)}
                             className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                         >
@@ -324,9 +352,15 @@ const OrderDetails = () => {
                                     </div>
                                     <div>
                                         <p className="text-sm text-gray-600">Trạng thái thanh toán</p>
-                                        <span className={`px-3 py-1 rounded-full text-sm ${getPaymentStatusColor(order.payment_status)}`}>
-                                            {getPaymentStatusText(order.payment_status)}
-                                        </span>
+                                        <select
+                                            value={paymentStatus}
+                                            onChange={(e) => payment_status_update(e)}
+                                            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                                        >
+                                            <option value="pending">Chờ thanh toán</option>
+                                            <option value="paid">Đã thanh toán</option>
+                                            <option value="unpaid">Chưa thanh toán</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>

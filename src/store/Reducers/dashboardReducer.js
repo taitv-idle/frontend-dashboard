@@ -67,7 +67,15 @@ export const dashboardReducer = createSlice({
             })
             .addCase(get_seller_dashboard_data.fulfilled, (state, { payload }) => {
                 state.loading = false;
-                state.totalSale = payload.totalSale || 0;
+                // Tính tổng doanh thu từ các đơn hàng đã thanh toán
+                const totalSale = payload.recentOrders?.reduce((total, order) => {
+                    if (order.payment_status === 'paid' || order.payment_status === 'completed') {
+                        return total + (order.price || 0);
+                    }
+                    return total;
+                }, 0) || 0;
+                
+                state.totalSale = totalSale;
                 state.totalOrder = payload.totalOrder || 0;
                 state.totalProduct = payload.totalProduct || 0;
                 state.totalPendingOrder = payload.totalPendingOrder || 0;
