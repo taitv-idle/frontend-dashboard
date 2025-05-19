@@ -175,7 +175,6 @@ const ProductDetail = () => {
                                                 let sizesToDisplay = [];
                                                 
                                                 try {
-                                                    // Trường hợp đặc biệt: cấu trúc từ API thực tế: ['["[\\"XXXL\\",\\"XXL\\",\\"XL\\",\\"L\\",\\"M\\",\\"S\\",\\"XS\\"]"]']
                                                     // Đây là một mảng chứa một phần tử string
                                                     if (Array.isArray(product.size) && product.size.length > 0) {
                                                         const outerString = product.size[0];

@@ -15,6 +15,7 @@ const AddProduct = () => {
     const dispatch = useDispatch();
     const { categorys = [] } = useSelector(state => state.category);
     const { loader, successMessage, errorMessage } = useSelector(state => state.product);
+    const { userInfo } = useSelector(state => state.auth);
 
     const [state, setState] = useState({
         name: "",
@@ -229,7 +230,7 @@ const AddProduct = () => {
         formData.append('stock', state.stock);
         formData.append('discount', state.discount);
         formData.append('brand', state.brand);
-        formData.append('shopName', 'EasyShop');
+        formData.append('shopName', userInfo?.shopInfo?.shopName || 'Cửa hàng của tôi');
         formData.append('category', category);
         
         // Đảm bảo dữ liệu mảng được serialize chỉ một lần
