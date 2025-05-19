@@ -25,7 +25,8 @@ const EditProduct = () => {
         brand: "",
         stock: "",
         size: [],
-        color: []
+        color: [],
+        tags: []
     });
 
     const [editorContent, setEditorContent] = useState('');
@@ -37,6 +38,7 @@ const EditProduct = () => {
     const [imageShow, setImageShow] = useState([]);
     const [loading, setLoading] = useState(false);
     const [newColor, setNewColor] = useState('');
+    const [newTag, setNewTag] = useState('');
 
     // Predefined sizes
     const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
@@ -76,6 +78,11 @@ const EditProduct = () => {
     useEffect(() => {
         if (product) {
             console.log('Product data received:', product);
+            // Log để kiểm tra kiểu dữ liệu của các trường arrays
+            console.log('Size type:', typeof product.size, 'Value:', product.size);
+            console.log('Color type:', typeof product.color, 'Value:', product.color);
+            console.log('Tags type:', typeof product.tags, 'Value:', product.tags);
+            
             // Xử lý nội dung HTML từ API
             const descriptionContent = product.description || '';
             console.log('Setting initial description content:', descriptionContent);
@@ -84,17 +91,91 @@ const EditProduct = () => {
             const sanitizedContent = descriptionContent.trim() ? descriptionContent : '<p></p>';
             setEditorContent(sanitizedContent);
             
-            setState(prev => ({
-                ...prev,
-                name: product.name || "",
-                description: sanitizedContent,
-                discount: product.discount || "",
-                price: product.price || "",
-                brand: product.brand || "",
-                stock: product.stock || "",
-                size: Array.isArray(product.size) ? product.size : [],
-                color: Array.isArray(product.color) ? product.color : []
-            }));
+            // Hàm xử lý dữ liệu mảng, xử lý riêng từng trường hợp cụ thể
+            const parseArrayData = (field) => {
+                console.log('Raw data to parse:', field);
+                
+                // Trường hợp dữ liệu đã là mảng có phần tử, như từ API trả về ['["[\\"XXXL\\",\\"XXL\\",...]"]']
+                if (Array.isArray(field) && field.length > 0) {
+                    try {
+                        // Lấy phần tử đầu tiên (chuỗi)
+                        const outerString = field[0];
+                        console.log('Outer string:', outerString);
+                        
+                        // Parse chuỗi bên ngoài
+                        const firstParse = JSON.parse(outerString);
+                        console.log('First parse result:', firstParse);
+                        
+                        // Nếu kết quả là mảng có 1 phần tử chuỗi
+                        if (Array.isArray(firstParse) && firstParse.length > 0) {
+                            try {
+                                // Trường hợp tags: ['["Áo","Quần"]'] - đơn giản hơn
+                                if (typeof firstParse[0] === 'string' && !firstParse[0].includes('\\')) {
+                                    return firstParse;
+                                }
+                                
+                                // Trường hợp size/color: ['["[\\"XXXL\\",\\"XXL\\",...]"]'] - cần parse thêm
+                                const secondParse = JSON.parse(firstParse[0]);
+                                console.log('Second parse result:', secondParse);
+                                
+                                if (Array.isArray(secondParse)) {
+                                    return secondParse;
+                                }
+                            } catch (e) {
+                                console.error('Error in nested parse:', e);
+                                return firstParse; // Trả về kết quả parse đầu tiên nếu parse lần hai lỗi
+                            }
+                        }
+                        return firstParse;
+                    } catch (e) {
+                        console.error('Error parsing array data:', e);
+                        return [];
+                    }
+                }
+                
+                // Nếu trường là string
+                if (typeof field === 'string') {
+                    try {
+                        const parsed = JSON.parse(field);
+                        return Array.isArray(parsed) ? parsed : [];
+                    } catch (e) {
+                        console.error('Error parsing string data:', e);
+                        return [];
+                    }
+                }
+                
+                // Nếu đã là mảng đơn giản
+                if (Array.isArray(field)) {
+                    return field;
+                }
+                
+                // Fallback
+                return [];
+            };
+            
+            // Xử lý và set state
+            setState(prev => {
+                const parsedSize = parseArrayData(product.size);
+                const parsedColor = parseArrayData(product.color);
+                const parsedTags = parseArrayData(product.tags);
+                
+                console.log('Parsed size for edit:', parsedSize);
+                console.log('Parsed color for edit:', parsedColor);
+                console.log('Parsed tags for edit:', parsedTags);
+                
+                return {
+                    ...prev,
+                    name: product.name || "",
+                    description: sanitizedContent,
+                    discount: product.discount || "",
+                    price: product.price || "",
+                    brand: product.brand || "",
+                    stock: product.stock || "",
+                    size: parsedSize,
+                    color: parsedColor,
+                    tags: parsedTags
+                };
+            });
             setCategory(product.category || "");
             setImageShow(product.images || []);
             setLoading(false);
@@ -192,8 +273,55 @@ const EditProduct = () => {
         console.log("Current state description:", state.description);
     }, [state.description]);
 
+    const handleTagKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAddTag();
+        }
+    };
+
+    const handleAddTag = () => {
+        if (newTag.trim() && !state.tags.includes(newTag.trim())) {
+            setState(prev => ({
+                ...prev,
+                tags: [...prev.tags, newTag.trim()]
+            }));
+            setNewTag('');
+        }
+    };
+
+    const handleRemoveTag = (tagToRemove) => {
+        setState(prev => ({
+            ...prev,
+            tags: prev.tags.filter(tag => tag !== tagToRemove)
+        }));
+    };
+
     const update = (e) => {
         e.preventDefault();
+        
+        // Debug log trước khi gửi đi
+        console.log('Sending size to API:', state.size);
+        console.log('Sending color to API:', state.color);
+        console.log('Sending tags to API:', state.tags);
+        
+        // Kiểm tra dữ liệu trước khi gửi đi
+        if (!Array.isArray(state.size) || state.size.length === 0) {
+            toast.error('Vui lòng chọn ít nhất một kích thước');
+            return;
+        }
+        
+        if (!Array.isArray(state.color) || state.color.length === 0) {
+            toast.error('Vui lòng thêm ít nhất một màu sắc');
+            return;
+        }
+        
+        // Đảm bảo mỗi trường được serialize chỉ một lần
+        const simplifyArray = (arr) => {
+            if (!Array.isArray(arr)) return JSON.stringify([]);
+            return JSON.stringify(arr);
+        };
+        
         const obj = {
             name: state.name,
             description: state.description,
@@ -203,9 +331,12 @@ const EditProduct = () => {
             stock: state.stock,
             category: category,
             productId: productId,
-            size: JSON.stringify(state.size),
-            color: JSON.stringify(state.color)
+            size: simplifyArray(state.size),
+            color: simplifyArray(state.color),
+            tags: simplifyArray(state.tags)
         };
+        
+        console.log('Final data being sent to server:', obj);
         dispatch(update_product(obj));
     };
 
@@ -421,6 +552,47 @@ const EditProduct = () => {
                                     </div>
                                 ))}
                             </div>
+                        </div>
+                    </div>
+
+                    <div className='mb-6'>
+                        <label className='block text-sm font-medium text-gray-700 mb-2'>Thẻ Sản Phẩm</label>
+                        <div className='mb-2'>
+                            <p className='text-sm text-gray-600 mb-2'>Thêm thẻ để giúp sản phẩm dễ tìm kiếm hơn</p>
+                            <div className='flex gap-2'>
+                                <input
+                                    type="text"
+                                    value={newTag}
+                                    onChange={(e) => setNewTag(e.target.value)}
+                                    onKeyPress={handleTagKeyPress}
+                                    placeholder="Nhập thẻ sản phẩm (ví dụ: thời trang, quần áo, hot...)"
+                                    className='flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'
+                                />
+                                <button
+                                    type='button'
+                                    onClick={handleAddTag}
+                                    className='px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors'
+                                >
+                                    Thêm
+                                </button>
+                            </div>
+                        </div>
+                        <div className='flex flex-wrap gap-2'>
+                            {state.tags.map((tag, index) => (
+                                <div
+                                    key={index}
+                                    className='group relative px-3 py-1 rounded-full border border-gray-300 bg-white'
+                                >
+                                    <span>#{tag}</span>
+                                    <button
+                                        type='button'
+                                        onClick={() => handleRemoveTag(tag)}
+                                        className='absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity'
+                                    >
+                                        <IoMdCloseCircle size={16} />
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     </div>
 

@@ -36,7 +36,7 @@ const Payments = () => {
         return (
             <div style={style} className='flex text-sm text-gray-800 font-medium hover:bg-indigo-50 transition-colors'>
                 <div className='w-[25%] p-3 whitespace-nowrap'>{index + 1}</div>
-                <div className='w-[25%] p-3 whitespace-nowrap'>${pendingWithdrows[index]?.amount}</div>
+                <div className='w-[25%] p-3 whitespace-nowrap'>{pendingWithdrows[index]?.amount.toLocaleString('vi-VN')} ₫</div>
                 <div className='w-[25%] p-3 whitespace-nowrap'>
                     <span className='py-1 px-3 bg-yellow-100 text-yellow-800 rounded-full text-xs'>
                         {pendingWithdrows[index]?.status}
@@ -54,7 +54,7 @@ const Payments = () => {
         return (
             <div style={style} className='flex text-sm text-gray-800 font-medium hover:bg-indigo-50 transition-colors'>
                 <div className='w-[25%] p-3 whitespace-nowrap'>{index + 1}</div>
-                <div className='w-[25%] p-3 whitespace-nowrap'>${successWithdrows[index]?.amount}</div>
+                <div className='w-[25%] p-3 whitespace-nowrap'>{successWithdrows[index]?.amount.toLocaleString('vi-VN')} ₫</div>
                 <div className='w-[25%] p-3 whitespace-nowrap'>
                     <span className='py-1 px-3 bg-green-100 text-green-800 rounded-full text-xs'>
                         {successWithdrows[index]?.status}
@@ -142,7 +142,7 @@ const Payments = () => {
             <div className='flex justify-between items-center p-5 bg-white rounded-lg shadow-md border border-gray-100'>
                 <div className='flex flex-col'>
                     <span className='text-sm text-gray-600 font-medium'>{title}</span>
-                    <span className='text-2xl font-bold text-gray-800'>${value}</span>
+                    <span className='text-2xl font-bold text-gray-800'>{value.toLocaleString('vi-VN')} ₫</span>
                 </div>
                 <div className={`w-12 h-12 rounded-full ${colorClasses[color].bg} flex justify-center items-center`}>
                     <MdCurrencyExchange className={`${colorClasses[color].text} text-xl`} />
@@ -157,7 +157,7 @@ const Payments = () => {
             <form onSubmit={sendRequest} className='mb-8'>
                 <div className='flex flex-col space-y-4'>
                     <div>
-                        <label className='block text-sm font-medium text-gray-700 mb-1'>Số tiền (USD)</label>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>Số tiền (VND)</label>
                         <input
                             type="number"
                             min="0"

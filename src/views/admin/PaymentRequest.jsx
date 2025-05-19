@@ -78,7 +78,7 @@ const PaymentRequest = () => {
                                         {index + 1}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        ${request.amount.toLocaleString()}
+                                        {request.amount.toLocaleString('vi-VN')} ₫
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                                         {renderStatusBadge(request.status)}

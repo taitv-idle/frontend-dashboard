@@ -138,13 +138,13 @@ const DiscountProducts = () => {
                                                     <span className='line-clamp-1' title={product.name}>{product.name}</span>
                                                 </td>
                                                 <td className='py-4 px-6'>{product.category}</td>
-                                                <td className='py-4 px-6 line-through text-gray-400'>${product.price.toFixed(2)}</td>
+                                                <td className='py-4 px-6 line-through text-gray-400'>{product.price.toLocaleString('vi-VN')} ₫</td>
                                                 <td className='py-4 px-6'>
                                                         <span className='px-2 py-1 bg-red-100 text-red-600 rounded-full text-xs font-medium'>
                                                             -{product.discount}%
                                                         </span>
                                                 </td>
-                                                <td className='py-4 px-6 font-bold text-green-600'>${discountedPrice.toFixed(2)}</td>
+                                                <td className='py-4 px-6 font-bold text-green-600'>{discountedPrice.toLocaleString('vi-VN')} ₫</td>
                                                 <td className='py-4 px-6'>
                                                     <div className='flex items-center gap-2'>
                                                         <Link

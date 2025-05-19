@@ -24,7 +24,8 @@ const AddProduct = () => {
         brand: "",
         stock: "",
         size: [],
-        color: []
+        color: [],
+        tags: []
     });
 
     const [cateShow, setCateShow] = useState(false);
@@ -35,6 +36,7 @@ const AddProduct = () => {
     const [imageShow, setImageShow] = useState([]);
     const [loadingCategories, setLoadingCategories] = useState(false);
     const [newColor, setNewColor] = useState('');
+    const [newTag, setNewTag] = useState('');
 
     // Predefined sizes
     const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
@@ -126,7 +128,8 @@ const AddProduct = () => {
                 brand: "",
                 stock: "",
                 size: [],
-                color: []
+                color: [],
+                tags: []
             });
             setImageShow([]);
             setImages([]);
@@ -193,6 +196,30 @@ const AddProduct = () => {
         setState(prev => ({ ...prev, description: content }));
     }, []);
 
+    const handleAddTag = () => {
+        if (newTag.trim() && !state.tags.includes(newTag.trim())) {
+            setState(prev => ({
+                ...prev,
+                tags: [...prev.tags, newTag.trim()]
+            }));
+            setNewTag('');
+        }
+    };
+
+    const handleRemoveTag = (tagToRemove) => {
+        setState(prev => ({
+            ...prev,
+            tags: prev.tags.filter(tag => tag !== tagToRemove)
+        }));
+    };
+
+    const handleTagKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAddTag();
+        }
+    };
+
     const add = (e) => {
         e.preventDefault();
         const formData = new FormData();
@@ -204,13 +231,39 @@ const AddProduct = () => {
         formData.append('brand', state.brand);
         formData.append('shopName', 'EasyShop');
         formData.append('category', category);
+        
+        // Đảm bảo dữ liệu mảng được serialize chỉ một lần
+        console.log('Size trước khi gửi:', state.size);
+        console.log('Color trước khi gửi:', state.color);
+        console.log('Tags trước khi gửi:', state.tags);
+        
+        // Kiểm tra và đảm bảo mảng không rỗng
+        if (!Array.isArray(state.size) || state.size.length === 0) {
+            toast.error('Vui lòng chọn ít nhất một kích thước');
+            return;
+        }
+        
+        if (!Array.isArray(state.color) || state.color.length === 0) {
+            toast.error('Vui lòng thêm ít nhất một màu sắc');
+            return;
+        }
+        
+        // Serialize mảng thành JSON string
         formData.append('size', JSON.stringify(state.size));
         formData.append('color', JSON.stringify(state.color));
+        formData.append('tags', JSON.stringify(state.tags));
+        
+        // Đảm bảo có ít nhất một hình ảnh
+        if (images.length === 0) {
+            toast.error('Vui lòng thêm ít nhất một hình ảnh cho sản phẩm');
+            return;
+        }
 
         images.forEach(img => {
             formData.append('images', img);
         });
 
+        // Gửi dữ liệu
         dispatch(add_product(formData));
     };
 
@@ -418,6 +471,47 @@ const AddProduct = () => {
                                 min="0"
                                 max="100"
                             />
+                        </div>
+                    </div>
+
+                    <div className='mb-6'>
+                        <label className='block text-sm font-medium text-gray-700 mb-2'>Thẻ Sản Phẩm</label>
+                        <div className='mb-2'>
+                            <p className='text-sm text-gray-600 mb-2'>Thêm thẻ để giúp sản phẩm dễ tìm kiếm hơn</p>
+                            <div className='flex gap-2'>
+                                <input
+                                    type="text"
+                                    value={newTag}
+                                    onChange={(e) => setNewTag(e.target.value)}
+                                    onKeyPress={handleTagKeyPress}
+                                    placeholder="Nhập thẻ sản phẩm (ví dụ: thời trang, quần áo, hot...)"
+                                    className='flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500'
+                                />
+                                <button
+                                    type='button'
+                                    onClick={handleAddTag}
+                                    className='px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors'
+                                >
+                                    Thêm
+                                </button>
+                            </div>
+                        </div>
+                        <div className='flex flex-wrap gap-2'>
+                            {state.tags.map((tag, index) => (
+                                <div
+                                    key={index}
+                                    className='group relative px-3 py-1 rounded-full border border-gray-300 bg-white'
+                                >
+                                    <span>#{tag}</span>
+                                    <button
+                                        type='button'
+                                        onClick={() => handleRemoveTag(tag)}
+                                        className='absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity'
+                                    >
+                                        <IoMdCloseCircle size={16} />
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     </div>
 

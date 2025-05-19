@@ -6,12 +6,53 @@ export const add_product = createAsyncThunk(
     async(product,{rejectWithValue, fulfillWithValue}) => {
         
         try { 
+            console.log('Sending product data to server:', product);
+            
+            // Kiểm tra formData nếu cần 
+            if (product instanceof FormData) {
+                // Log một số trường quan trọng từ FormData
+                console.log('Size from FormData:', product.get('size'));
+                console.log('Color from FormData:', product.get('color'));
+                console.log('Tags from FormData:', product.get('tags'));
+            }
+            
             const {data} = await api.post('/product-add',product,{withCredentials: true}) 
-            // console.log(data)
-            return fulfillWithValue(data)
+            
+            // Parse các trường array trong sản phẩm mới
+            if (data.product) {
+                ['size', 'color', 'tags'].forEach(field => {
+                    if (typeof data.product[field] === 'string') {
+                        try {
+                            // Xử lý double-serialization
+                            let parsed = JSON.parse(data.product[field]);
+                            
+                            // Kiểm tra nếu vẫn là string (double-serialized)
+                            if (typeof parsed === 'string') {
+                                try {
+                                    parsed = JSON.parse(parsed);
+                                } catch (e) {
+                                    console.error(`Error in second parse for ${field} after create:`, e);
+                                }
+                            }
+                            
+                            // Đảm bảo kết quả cuối cùng là array
+                            if (Array.isArray(parsed)) {
+                                data.product[field] = parsed;
+                            } else {
+                                console.error(`Expected array but got ${typeof parsed} for ${field}`);
+                                data.product[field] = [];
+                            }
+                        } catch (e) {
+                            console.error(`Failed to parse ${field} after create:`, e);
+                            data.product[field] = [];
+                        }
+                    }
+                });
+            }
+            
+            return fulfillWithValue(data);
         } catch (error) {
-            // console.log(error.response.data)
-            return rejectWithValue(error.response.data)
+            return rejectWithValue(error.response.data);
         }
     }
 )
@@ -44,10 +85,50 @@ export const get_product = createAsyncThunk(
         try {
             const {data} = await api.get(`/product-details/${productId}`, {withCredentials: true})
             console.log('API Response:', data);
-            if (data.product && typeof data.product.description === 'string') {
+            
+            // Parse dữ liệu array từ string JSON nếu cần
+            if (data.product) {
                 // Ensure description is properly formatted HTML if needed
-                data.product.description = data.product.description.trim();
+                if (typeof data.product.description === 'string') {
+                    data.product.description = data.product.description.trim();
+                }
+                
+                // Tự động parse các trường size, color, tags nếu là chuỗi
+                ['size', 'color', 'tags'].forEach(field => {
+                    if (typeof data.product[field] === 'string') {
+                        try {
+                            console.log(`Parsing ${field} from string:`, data.product[field]);
+                            
+                            // Xử lý double-serialization
+                            let parsed = JSON.parse(data.product[field]);
+                            
+                            // Kiểm tra nếu vẫn là string (double-serialized)
+                            if (typeof parsed === 'string') {
+                                try {
+                                    parsed = JSON.parse(parsed);
+                                    console.log(`Double parse needed for ${field}:`, parsed);
+                                } catch (e) {
+                                    console.error(`Error in second parse for ${field}:`, e);
+                                }
+                            }
+                            
+                            // Đảm bảo kết quả cuối cùng là array
+                            if (Array.isArray(parsed)) {
+                                data.product[field] = parsed;
+                            } else {
+                                console.error(`Expected array but got ${typeof parsed} for ${field}`);
+                                data.product[field] = [];
+                            }
+                            
+                            console.log(`After parsing ${field}:`, data.product[field]);
+                        } catch (e) {
+                            console.error(`Failed to parse ${field}:`, e);
+                            data.product[field] = [];
+                        }
+                    }
+                });
             }
+            
             return fulfillWithValue(data)
         } catch (error) {
             return rejectWithValue(error.response.data)
@@ -83,15 +164,67 @@ export const delete_product = createAsyncThunk(
 export const update_product = createAsyncThunk(
     'product/update_product',
     async( product ,{rejectWithValue, fulfillWithValue}) => {
-        
         try {
-             
-            const {data} = await api.post('/product-update', product,{withCredentials: true}) 
-            console.log(data)
-            return fulfillWithValue(data)
+            // Đảm bảo các trường array được gửi dưới dạng JSON string
+            const productToUpdate = { ...product };
+            ['size', 'color', 'tags'].forEach(field => {
+                if (Array.isArray(productToUpdate[field])) {
+                    console.log(`Serializing ${field} before update:`, productToUpdate[field]);
+                    // Dùng JSON.stringify chỉ MỘT LẦN
+                    productToUpdate[field] = JSON.stringify(productToUpdate[field]);
+                } else if (typeof productToUpdate[field] === 'string') {
+                    try {
+                        // Nếu đã là string, thử parse để đảm bảo không bị double-serialize
+                        const parsed = JSON.parse(productToUpdate[field]);
+                        // Nếu parse được và là array, convert lại thành string
+                        if (Array.isArray(parsed)) {
+                            productToUpdate[field] = JSON.stringify(parsed);
+                        }
+                    } catch (e) {
+                        // Nếu không parse được, giả định là string đã đúng format
+                        console.error(`Error parsing existing string for ${field}:`, e);
+                    }
+                }
+            });
+            
+            const {data} = await api.post('/product-update', productToUpdate, {withCredentials: true})
+            console.log('Update response:', data);
+            
+            // Parse các trường array nếu cần
+            if (data.product) {
+                ['size', 'color', 'tags'].forEach(field => {
+                    if (typeof data.product[field] === 'string') {
+                        try {
+                            // Xử lý double-serialization
+                            let parsed = JSON.parse(data.product[field]);
+                            
+                            // Kiểm tra nếu vẫn là string (double-serialized)
+                            if (typeof parsed === 'string') {
+                                try {
+                                    parsed = JSON.parse(parsed);
+                                } catch (e) {
+                                    console.error(`Failed to parse second layer for ${field} after update:`, e);
+                                }
+                            }
+                            
+                            // Đảm bảo kết quả cuối cùng là array
+                            if (Array.isArray(parsed)) {
+                                data.product[field] = parsed;
+                            } else {
+                                console.error(`Expected array but got ${typeof parsed} for ${field} after update`);
+                                data.product[field] = [];
+                            }
+                        } catch (e) {
+                            console.error(`Failed to parse ${field} after update:`, e);
+                            data.product[field] = [];
+                        }
+                    }
+                });
+            }
+            
+            return fulfillWithValue(data);
         } catch (error) {
-            // console.log(error.response.data)
-            return rejectWithValue(error.response.data)
+            return rejectWithValue(error.response.data);
         }
     }
 )
@@ -170,7 +303,43 @@ export const productReducer = createSlice({
             .addCase(add_product.fulfilled, (state, { payload }) => {
                 state.loader = false;
                 state.successMessage = payload.message;
-                state.products = [...state.products, payload.product]; // Cập nhật danh sách nếu backend trả product
+                
+                // Đảm bảo các mảng được parse đúng nếu có product trong response
+                if (payload.product) {
+                    ['size', 'color', 'tags'].forEach(field => {
+                        if (typeof payload.product[field] === 'string') {
+                            try {
+                                // Xử lý double-serialization
+                                let parsed = JSON.parse(payload.product[field]);
+                                
+                                // Kiểm tra nếu vẫn là string (double-serialized)
+                                if (typeof parsed === 'string') {
+                                    try {
+                                        parsed = JSON.parse(parsed);
+                                    } catch (e) {
+                                        console.error(`Error in second parse for ${field} in add_product reducer:`, e);
+                                    }
+                                }
+                                
+                                // Đảm bảo kết quả cuối cùng là array
+                                if (Array.isArray(parsed)) {
+                                    payload.product[field] = parsed;
+                                } else {
+                                    console.error(`Expected array but got ${typeof parsed} for ${field} in add_product reducer`);
+                                    payload.product[field] = [];
+                                }
+                            } catch (e) {
+                                console.error(`Failed to parse ${field} in add_product reducer:`, e);
+                                payload.product[field] = [];
+                            }
+                        } else if (!Array.isArray(payload.product[field])) {
+                            payload.product[field] = [];
+                        }
+                    });
+                    
+                    // Cập nhật state với sản phẩm đã được parse đúng
+                    state.products = [...state.products, payload.product];
+                }
             })
 
             // Get Products
@@ -247,6 +416,39 @@ export const productReducer = createSlice({
             .addCase(get_product.fulfilled, (state, { payload }) => {
                 state.loading = false;
                 console.log('Product description from API:', payload.product?.description);
+                // Đảm bảo các mảng được parse đúng
+                if (payload.product) {
+                    ['size', 'color', 'tags'].forEach(field => {
+                        if (typeof payload.product[field] === 'string') {
+                            try {
+                                // Xử lý double-serialization
+                                let parsed = JSON.parse(payload.product[field]);
+                                
+                                // Kiểm tra nếu vẫn là string (double-serialized)
+                                if (typeof parsed === 'string') {
+                                    try {
+                                        parsed = JSON.parse(parsed);
+                                    } catch (e) {
+                                        console.error(`Error in second parse for ${field} in reducer:`, e);
+                                    }
+                                }
+                                
+                                // Đảm bảo kết quả cuối cùng là array
+                                if (Array.isArray(parsed)) {
+                                    payload.product[field] = parsed;
+                                } else {
+                                    console.error(`Expected array but got ${typeof parsed} for ${field} in reducer`);
+                                    payload.product[field] = [];
+                                }
+                            } catch (e) {
+                                console.error(`Failed to parse ${field} in reducer:`, e);
+                                payload.product[field] = [];
+                            }
+                        } else if (!Array.isArray(payload.product[field])) {
+                            payload.product[field] = [];
+                        }
+                    });
+                }
                 state.product = payload.product;
             })
 

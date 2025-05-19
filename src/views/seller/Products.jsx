@@ -136,7 +136,7 @@ const Products = () => {
                                             </td>
                                             <td className='py-4 px-6'>{d.category}</td>
                                             <td className='py-4 px-6'>{d.brand}</td>
-                                            <td className='py-4 px-6 font-medium'>${d.price}</td>
+                                            <td className='py-4 px-6 font-medium'>{d.price.toLocaleString('vi-VN')} ₫</td>
                                             <td className='py-4 px-6'>
                                                 {d.discount === 0 ? (
                                                     <span className='text-gray-500'>Không giảm</span>
