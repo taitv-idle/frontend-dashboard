@@ -62,8 +62,13 @@ const SellerDashboard = () => {
         const salesData = displayData.map(data => {
             // Tính tổng doanh thu từ các đơn hàng đã thanh toán trong tháng
             const monthlyOrders = recentOrder?.filter(order => {
-                const orderMonth = new Date(order.date).getMonth();
-                return orderMonth === data.month - 1 && 
+                const orderDate = new Date(order.date);
+                const orderMonth = orderDate.getMonth() + 1; // +1 because months are 1-indexed in monthlyData
+                const orderYear = orderDate.getFullYear();
+                const currentYear = new Date().getFullYear();
+                
+                return orderMonth === data.month && 
+                       orderYear === currentYear &&
                        (order.payment_status === 'paid' || order.payment_status === 'completed');
             }) || [];
             
@@ -355,7 +360,9 @@ const SellerDashboard = () => {
                                 <span className="text-gray-600">Đơn hàng đã thanh toán</span>
                             </div>
                             <span className="font-medium text-gray-800">
-                                {recentOrder?.filter(order => order.payment_status === 'paid').length || 0}
+                                {recentOrder?.filter(order => 
+                                    order.payment_status === 'paid' || order.payment_status === 'completed'
+                                ).length || 0}
                             </span>
                         </div>
                         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -373,7 +380,9 @@ const SellerDashboard = () => {
                                 <span className="text-gray-600">Đơn hàng đang xử lý</span>
                             </div>
                             <span className="font-medium text-gray-800">
-                                {recentOrder?.filter(order => order.delivery_status === 'processing').length || 0}
+                                {recentOrder?.filter(order => 
+                                    order.delivery_status === 'processing' || order.delivery_status === 'pending'
+                                ).length || 0}
                             </span>
                         </div>
                     </div>
@@ -391,7 +400,7 @@ const SellerDashboard = () => {
                             </div>
                             <span className="font-medium text-gray-800">
                                 {recentOrder
-                                    ?.filter(order => order.payment_status === 'paid')
+                                    ?.filter(order => order.payment_status === 'paid' || order.payment_status === 'completed')
                                     .reduce((total, order) => total + (order.price || 0), 0)
                                     .toLocaleString('vi-VN')} ₫
                             </span>
@@ -404,6 +413,18 @@ const SellerDashboard = () => {
                             <span className="font-medium text-gray-800">
                                 {recentOrder
                                     ?.filter(order => order.payment_status === 'pending')
+                                    .reduce((total, order) => total + (order.price || 0), 0)
+                                    .toLocaleString('vi-VN')} ₫
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center">
+                                <MdOutlinePayment className="text-red-600 mr-3" size={20} />
+                                <span className="text-gray-600">Doanh thu chưa thanh toán</span>
+                            </div>
+                            <span className="font-medium text-gray-800">
+                                {recentOrder
+                                    ?.filter(order => order.payment_status === 'unpaid')
                                     .reduce((total, order) => total + (order.price || 0), 0)
                                     .toLocaleString('vi-VN')} ₫
                             </span>
@@ -471,6 +492,18 @@ const SellerDashboard = () => {
                                         .toLocaleString('vi-VN')} ₫
                                 </span>
                             </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Chưa thanh toán:</span>
+                                <span className="font-medium">
+                                    {recentOrder
+                                        ?.filter(order => 
+                                            moment(order.date).isSame(moment(), 'day') &&
+                                            (order.payment_status === 'pending' || order.payment_status === 'unpaid')
+                                        )
+                                        .reduce((total, order) => total + (order.price || 0), 0)
+                                        .toLocaleString('vi-VN')} ₫
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <div className="p-4 bg-gray-50 rounded-lg">
@@ -496,6 +529,18 @@ const SellerDashboard = () => {
                                         .toLocaleString('vi-VN')} ₫
                                 </span>
                             </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Chưa thanh toán:</span>
+                                <span className="font-medium">
+                                    {recentOrder
+                                        ?.filter(order => 
+                                            moment(order.date).isSame(moment(), 'week') &&
+                                            (order.payment_status === 'pending' || order.payment_status === 'unpaid')
+                                        )
+                                        .reduce((total, order) => total + (order.price || 0), 0)
+                                        .toLocaleString('vi-VN')} ₫
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <div className="p-4 bg-gray-50 rounded-lg">
@@ -516,6 +561,18 @@ const SellerDashboard = () => {
                                         ?.filter(order => 
                                             moment(order.date).isSame(moment(), 'month') &&
                                             (order.payment_status === 'paid' || order.payment_status === 'completed')
+                                        )
+                                        .reduce((total, order) => total + (order.price || 0), 0)
+                                        .toLocaleString('vi-VN')} ₫
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-gray-600">Chưa thanh toán:</span>
+                                <span className="font-medium">
+                                    {recentOrder
+                                        ?.filter(order => 
+                                            moment(order.date).isSame(moment(), 'month') &&
+                                            (order.payment_status === 'pending' || order.payment_status === 'unpaid')
                                         )
                                         .reduce((total, order) => total + (order.price || 0), 0)
                                         .toLocaleString('vi-VN')} ₫

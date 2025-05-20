@@ -110,6 +110,7 @@ export const get_product = createAsyncThunk(
                                 } catch (e) {
                                     console.error(`Error in second parse for ${field}:`, e);
                                 }
+
                             }
                             
                             // Đảm bảo kết quả cuối cùng là array

@@ -46,7 +46,10 @@ export const get_admin_order = createAsyncThunk(
  * Cập nhật trạng thái đơn hàng (admin)
  * @param {Object} params
  * @param {string} params.orderId - ID đơn hàng cần cập nhật
- * @param {Object} params.info - Thông tin cập nhật (trạng thái mới)
+ * @param {Object} params.info - Thông tin cập nhật
+ * @param {string} [params.info.status] - Trạng thái giao hàng mới
+ * @param {string} [params.info.payment_status] - Trạng thái thanh toán mới
+ * @param {boolean} [params.info.updateAllSuborders] - Cập nhật tất cả đơn hàng con
  */
 export const admin_order_status_update = createAsyncThunk(
     'orders/admin_order_status_update',
@@ -110,20 +113,40 @@ export const get_seller_order = createAsyncThunk(
  * Cập nhật trạng thái đơn hàng (seller)
  * @param {Object} params
  * @param {string} params.orderId - ID đơn hàng cần cập nhật
- * @param {Object} params.info - Thông tin cập nhật (trạng thái mới)
+ * @param {Object} params.info - Thông tin cập nhật
+ * @param {string} [params.info.status] - Trạng thái giao hàng mới
+ * @param {string} [params.info.payment_status] - Trạng thái thanh toán mới
  */
 export const seller_order_status_update = createAsyncThunk(
     'orders/seller_order_status_update',
-    async({ orderId, info }, { rejectWithValue, fulfillWithValue }) => {
+    async({ orderId, info }, { rejectWithValue, fulfillWithValue, getState }) => {
         try {
+            // Chuyển đổi delivery_status thành status cho phù hợp với API backend
+            const apiPayload = { ...info };
+            if (info.delivery_status) {
+                apiPayload.status = info.delivery_status;
+                delete apiPayload.delivery_status;
+            }
+            
+            console.log('Updating seller order status:', { orderId, payload: apiPayload });
             const { data } = await api.put(
                 `/seller/order-status/update/${orderId}`,
-                info,
+                apiPayload,
                 { withCredentials: true }
             );
-            return fulfillWithValue(data);
+            console.log('Order status update response:', data);
+            
+            // Thêm thông tin từ request vào response
+            return fulfillWithValue({
+                ...data,
+                orderId: orderId,
+                delivery_status: info.delivery_status, // Giữ lại delivery_status cho frontend
+                payment_status: info.payment_status,
+                requestInfo: info // Thêm toàn bộ thông tin request để debug
+            });
         } catch (error) {
-            return rejectWithValue(error.response.data);
+            console.error('Order status update error:', error.response?.data || error.message);
+            return rejectWithValue(error.response?.data || { message: error.message });
         }
     }
 );
@@ -221,11 +244,49 @@ export const OrderReducer = createSlice({
             })
             .addCase(seller_order_status_update.rejected, (state, { payload }) => {
                 state.loader = false;
-                state.errorMessage = payload.message;
+                state.errorMessage = payload?.message || 'Cập nhật trạng thái thất bại';
+                console.error('Order status update rejected:', payload);
             })
             .addCase(seller_order_status_update.fulfilled, (state, { payload }) => {
                 state.loader = false;
                 state.successMessage = payload.message;
+                console.log('Order status update fulfilled:', payload);
+                
+                // Cập nhật trạng thái đơn hàng hiện tại trong state nếu ID khớp
+                if (state.order && state.order._id === payload.orderId) {
+                    console.log('Updating order in state:', payload);
+                    if (payload.order) {
+                        // Nếu API trả về toàn bộ đơn hàng đã cập nhật
+                        state.order = payload.order;
+                    } else {
+                        // Nếu API chỉ trả về ID và thông báo, cập nhật các trường cần thiết
+                        if (payload.delivery_status) {
+                            state.order.delivery_status = payload.delivery_status;
+                        }
+                        if (payload.payment_status) {
+                            state.order.payment_status = payload.payment_status;
+                        }
+                    }
+                }
+                
+                // Cập nhật danh sách đơn hàng nếu có đơn hàng trùng ID
+                if (state.myOrders.length > 0 && payload.orderId) {
+                    const orderIndex = state.myOrders.findIndex(order => order._id === payload.orderId);
+                    if (orderIndex !== -1) {
+                        const updatedOrder = {...state.myOrders[orderIndex]};
+                        
+                        // Cập nhật các trường từ payload
+                        if (payload.delivery_status) {
+                            updatedOrder.delivery_status = payload.delivery_status;
+                        }
+                        if (payload.payment_status) {
+                            updatedOrder.payment_status = payload.payment_status;
+                        }
+                        
+                        // Gán lại vào mảng
+                        state.myOrders[orderIndex] = updatedOrder;
+                    }
+                }
             });
     }
 });

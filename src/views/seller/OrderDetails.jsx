@@ -331,15 +331,33 @@ const OrderDetails = () => {
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center">
                                     <span className="text-gray-600">Tạm tính:</span>
-                                    <span className="font-medium">{formatPrice(order.price - (order.shipping_fee || 0))}</span>
+                                    <span className="font-medium">{formatPrice(order.products?.reduce((total, product) => {
+                                        const price = product.productId?.price || 0;
+                                        const quantity = product.productId?.quantity || 0;
+                                        const discount = product.productId?.discount || 0;
+                                        const itemTotal = price * quantity * (1 - discount/100);
+                                        return total + itemTotal;
+                                    }, 0))}</span>
                                 </div>
+                                {order.discount > 0 && (
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-600">Giảm giá:</span>
+                                        <span className="font-medium text-red-600">-{formatPrice(order.discount)}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between items-center">
                                     <span className="text-gray-600">Phí vận chuyển:</span>
-                                    <span className="font-medium">{formatPrice(order.shipping_fee || 0)}</span>
+                                    <span className="font-medium">{formatPrice(40000)}</span>
                                 </div>
                                 <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                                     <span className="text-lg font-semibold text-gray-900">Tổng cộng:</span>
-                                    <span className="text-lg font-semibold text-indigo-600">{formatPrice(order.price)}</span>
+                                    <span className="text-lg font-semibold text-indigo-600">{formatPrice(order.products?.reduce((total, product) => {
+                                        const price = product.productId?.price || 0;
+                                        const quantity = product.productId?.quantity || 0;
+                                        const discount = product.productId?.discount || 0;
+                                        const itemTotal = price * quantity * (1 - discount/100);
+                                        return total + itemTotal;
+                                    }, 0) + 40000)}</span>
                                 </div>
                             </div>
 

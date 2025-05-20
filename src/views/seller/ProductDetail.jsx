@@ -175,28 +175,21 @@ const ProductDetail = () => {
                                                 let sizesToDisplay = [];
                                                 
                                                 try {
-                                                    // Đây là một mảng chứa một phần tử string
-                                                    if (Array.isArray(product.size) && product.size.length > 0) {
-                                                        const outerString = product.size[0];
-                                                        console.log("Outer string:", outerString);
-                                                        
-                                                        // Parse lần 1
-                                                        const firstParse = JSON.parse(outerString); // => ["[\"XXXL\",\"XXL\",...]"]
-                                                        console.log("First parse:", firstParse);
-                                                        
-                                                        if (Array.isArray(firstParse) && firstParse.length > 0) {
-                                                            // Parse lần 2
-                                                            const secondParse = JSON.parse(firstParse[0]); // => ["XXXL","XXL",...]
-                                                            console.log("Second parse:", secondParse);
-                                                            
-                                                            if (Array.isArray(secondParse)) {
-                                                                sizesToDisplay = secondParse;
-                                                            }
-                                                        }
+                                                    // Phương pháp xử lý 1: Nếu là mảng chuỗi (["S","XXXL"])
+                                                    if (Array.isArray(product.size)) {
+                                                        sizesToDisplay = product.size;
                                                     }
-                                                    // Fallback cho các trường hợp khác
+                                                    // Phương pháp xử lý 2: Nếu là chuỗi JSON
                                                     else if (typeof product.size === 'string') {
-                                                        sizesToDisplay = JSON.parse(product.size);
+                                                        try {
+                                                            const parsed = JSON.parse(product.size);
+                                                            if (Array.isArray(parsed)) {
+                                                                sizesToDisplay = parsed;
+                                                            }
+                                                        } catch (e) {
+                                                            // Nếu không phải JSON, coi như là một size duy nhất
+                                                            sizesToDisplay = [product.size];
+                                                        }
                                                     }
                                                 } catch (error) {
                                                     console.error("Error parsing sizes:", error);
@@ -237,28 +230,21 @@ const ProductDetail = () => {
                                                 let colorsToDisplay = [];
                                                 
                                                 try {
-                                                    // Trường hợp đặc biệt: cấu trúc từ API thực tế: ['["[\\"Xanh\\",\\"Đỏ\\",\\"Tím\\",\\"Vàng\\"]"]']
-                                                    if (Array.isArray(product.color) && product.color.length > 0) {
-                                                        const outerString = product.color[0];
-                                                        console.log("Outer string:", outerString);
-                                                        
-                                                        // Parse lần 1
-                                                        const firstParse = JSON.parse(outerString); // => ["[\"Xanh\",\"Đỏ\",...]"]
-                                                        console.log("First parse:", firstParse);
-                                                        
-                                                        if (Array.isArray(firstParse) && firstParse.length > 0) {
-                                                            // Parse lần 2
-                                                            const secondParse = JSON.parse(firstParse[0]); // => ["Xanh","Đỏ",...]
-                                                            console.log("Second parse:", secondParse);
-                                                            
-                                                            if (Array.isArray(secondParse)) {
-                                                                colorsToDisplay = secondParse;
-                                                            }
-                                                        }
+                                                    // Phương pháp xử lý 1: Nếu là mảng chuỗi (["Xanh"])
+                                                    if (Array.isArray(product.color)) {
+                                                        colorsToDisplay = product.color;
                                                     }
-                                                    // Fallback cho các trường hợp khác
+                                                    // Phương pháp xử lý 2: Nếu là chuỗi JSON
                                                     else if (typeof product.color === 'string') {
-                                                        colorsToDisplay = JSON.parse(product.color);
+                                                        try {
+                                                            const parsed = JSON.parse(product.color);
+                                                            if (Array.isArray(parsed)) {
+                                                                colorsToDisplay = parsed;
+                                                            }
+                                                        } catch (e) {
+                                                            // Nếu không phải JSON, coi như là một màu duy nhất
+                                                            colorsToDisplay = [product.color];
+                                                        }
                                                     }
                                                 } catch (error) {
                                                     console.error("Error parsing colors:", error);
@@ -301,23 +287,21 @@ const ProductDetail = () => {
                                             let tagsToDisplay = [];
                                             
                                             try {
-                                                // Trường hợp đặc biệt: cấu trúc từ API thực tế: ['["Áo","Quần"]']
-                                                if (Array.isArray(product.tags) && product.tags.length > 0) {
-                                                    // Đây là cấu trúc đơn giản hơn so với size và color
-                                                    const outerString = product.tags[0];
-                                                    console.log("Tags outer string:", outerString);
-                                                    
-                                                    // Parse trực tiếp
-                                                    const parsedTags = JSON.parse(outerString);
-                                                    console.log("Parsed tags:", parsedTags);
-                                                    
-                                                    if (Array.isArray(parsedTags)) {
-                                                        tagsToDisplay = parsedTags;
-                                                    }
+                                                // Phương pháp xử lý 1: Nếu là mảng chuỗi (["Áo","quần"])
+                                                if (Array.isArray(product.tags)) {
+                                                    tagsToDisplay = product.tags;
                                                 }
-                                                // Fallback cho các trường hợp khác
+                                                // Phương pháp xử lý 2: Nếu là chuỗi JSON
                                                 else if (typeof product.tags === 'string') {
-                                                    tagsToDisplay = JSON.parse(product.tags);
+                                                    try {
+                                                        const parsed = JSON.parse(product.tags);
+                                                        if (Array.isArray(parsed)) {
+                                                            tagsToDisplay = parsed;
+                                                        }
+                                                    } catch (e) {
+                                                        // Nếu không phải JSON, coi như là một tag duy nhất
+                                                        tagsToDisplay = [product.tags];
+                                                    }
                                                 }
                                             } catch (error) {
                                                 console.error("Error parsing tags:", error);

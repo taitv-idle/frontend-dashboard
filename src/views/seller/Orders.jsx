@@ -144,10 +144,19 @@ const Orders = () => {
                                         .map((order) => (
                                             <tr key={order._id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                #{order._id.slice(-8).toUpperCase()}
+                                                #{order._id.slice(-8).toUpperCase().slice(0, -2)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {order.price.toLocaleString('vi-VN')}₫
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-gray-900">Tổng tiền: {(order.products?.reduce((total, product) => {
+                                                        const price = product.productId?.price || 0;
+                                                        const quantity = product.productId?.quantity || 0;
+                                                        const discount = product.productId?.discount || 0;
+                                                        const itemTotal = price * quantity * (1 - discount/100);
+                                                        return total + itemTotal;
+                                                    }, 0) + 40000).toLocaleString('vi-VN')} ₫</span>
+                                                    <span className="text-xs text-gray-500">(Đã bao gồm phí vận chuyển 40,000₫ và giảm giá)</span>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 <StatusBadge status={order.payment_status} />

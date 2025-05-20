@@ -74,38 +74,53 @@ const Orders = () => {
                             myOrders.map((order) => (
                                 <React.Fragment key={order._id}>
                                     <tr className='border-b border-indigo-500 hover:bg-indigo-600/50 transition-colors'>
-                                        <td className='px-6 py-4 font-medium'>#{order._id}</td>
-                                        <td className='px-6 py-4'>{order.price?.toLocaleString()} VND</td>
+                                        <td className='px-6 py-4 font-medium'>#{order._id.slice(-8).toUpperCase().slice(0, -2)}</td>
                                         <td className='px-6 py-4'>
-                                <span className={`px-3 py-1 rounded-full text-xs ${
-                                    order.payment_status === 'completed'
-                                        ? 'bg-green-600 text-green-100'
-                                        : 'bg-yellow-600 text-yellow-100'
-                                }`}>
-                                    {order.payment_status === 'completed' ? 'Đã thanh toán' : 'Chưa thanh toán'}
-                                </span>
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-white">Tổng tiền: {(order.products?.reduce((total, product) => {
+                                                    const price = product.price || 0;
+                                                    const quantity = product.quantity || 0;
+                                                    const discount = product.discount || 0;
+                                                    const itemTotal = price * quantity * (1 - discount/100);
+                                                    return total + itemTotal;
+                                                }, 0) + 40000).toLocaleString('vi-VN')} ₫</span>
+                                                <span className="text-xs text-indigo-200">(Đã bao gồm phí vận chuyển 40,000₫ và giảm giá)</span>
+                                            </div>
                                         </td>
                                         <td className='px-6 py-4'>
-                                <span className={`px-3 py-1 rounded-full text-xs ${
-                                    order.delivery_status === 'delivered'
-                                        ? 'bg-green-600 text-green-100'
-                                        : order.delivery_status === 'processing'
-                                            ? 'bg-blue-600 text-blue-100'
-                                            : order.delivery_status === 'warehouse'
-                                                ? 'bg-purple-600 text-purple-100'
-                                                : order.delivery_status === 'placed'
-                                                    ? 'bg-indigo-600 text-indigo-100'
-                                                    : order.delivery_status === 'cancelled'
-                                                        ? 'bg-red-600 text-red-100'
-                                                        : 'bg-orange-600 text-orange-100'
-                                }`}>
-                                    {order.delivery_status === 'delivered' ? 'Đã giao' :
-                                        order.delivery_status === 'processing' ? 'Đang xử lý' :
-                                            order.delivery_status === 'warehouse' ? 'Trong kho' :
-                                                order.delivery_status === 'placed' ? 'Đã đặt' :
-                                                    order.delivery_status === 'cancelled' ? 'Đã hủy' :
-                                                        'Chờ xử lý'}
-                                </span>
+                                            <span className={`px-3 py-1 rounded-full text-xs ${
+                                                order.payment_status === 'paid'
+                                                    ? 'bg-green-600 text-green-100'
+                                                    : order.payment_status === 'pending'
+                                                        ? 'bg-yellow-600 text-yellow-100'
+                                                        : 'bg-red-600 text-red-100'
+                                            }`}>
+                                                {order.payment_status === 'paid' ? 'Đã thanh toán' : 
+                                                 order.payment_status === 'pending' ? 'Chờ thanh toán' : 
+                                                 'Chưa thanh toán'}
+                                            </span>
+                                        </td>
+                                        <td className='px-6 py-4'>
+                                            <span className={`px-3 py-1 rounded-full text-xs ${
+                                                order.delivery_status === 'delivered'
+                                                    ? 'bg-green-600 text-green-100'
+                                                    : order.delivery_status === 'processing'
+                                                        ? 'bg-blue-600 text-blue-100'
+                                                        : order.delivery_status === 'warehouse'
+                                                            ? 'bg-purple-600 text-purple-100'
+                                                            : order.delivery_status === 'placed'
+                                                                ? 'bg-indigo-600 text-indigo-100'
+                                                                : order.delivery_status === 'cancelled'
+                                                                    ? 'bg-red-600 text-red-100'
+                                                                    : 'bg-orange-600 text-orange-100'
+                                            }`}>
+                                                {order.delivery_status === 'delivered' ? 'Đã giao' :
+                                                    order.delivery_status === 'processing' ? 'Đang xử lý' :
+                                                        order.delivery_status === 'warehouse' ? 'Trong kho' :
+                                                            order.delivery_status === 'placed' ? 'Đã đặt' :
+                                                                order.delivery_status === 'cancelled' ? 'Đã hủy' :
+                                                                    'Chờ xử lý'}
+                                            </span>
                                         </td>
                                         <td className='px-6 py-4'>
                                             <Link
@@ -135,15 +150,28 @@ const Orders = () => {
                                                     <h4 className='font-medium text-indigo-100'>Đơn hàng con:</h4>
                                                     {order.suborder.map((subOrder) => (
                                                         <div key={subOrder._id} className='flex items-center justify-between bg-indigo-800/50 p-3 rounded-lg'>
-                                                            <span className='text-sm'>#{subOrder._id}</span>
-                                                            <span className='text-sm'>{subOrder.price?.toLocaleString()} VND</span>
+                                                            <span className='text-sm'>#{subOrder._id.slice(-8).toUpperCase().slice(0, -2)}</span>
+                                                            <div className="flex flex-col items-end">
+                                                                <span className="font-medium text-white">Tổng tiền: {(subOrder.products?.reduce((total, product) => {
+                                                                    const price = product.price || 0;
+                                                                    const quantity = product.quantity || 0;
+                                                                    const discount = product.discount || 0;
+                                                                    const itemTotal = price * quantity * (1 - discount/100);
+                                                                    return total + itemTotal;
+                                                                }, 0) + 40000).toLocaleString('vi-VN')} ₫</span>
+                                                                <span className="text-xs text-indigo-200">(Đã bao gồm phí vận chuyển 40,000₫ và giảm giá)</span>
+                                                            </div>
                                                             <span className={`px-2 py-1 rounded-full text-xs ${
-                                                                subOrder.payment_status === 'completed'
+                                                                subOrder.payment_status === 'paid'
                                                                     ? 'bg-green-600 text-green-100'
-                                                                    : 'bg-yellow-600 text-yellow-100'
+                                                                    : subOrder.payment_status === 'pending'
+                                                                        ? 'bg-yellow-600 text-yellow-100'
+                                                                        : 'bg-red-600 text-red-100'
                                                             }`}>
-                                                    {subOrder.payment_status === 'completed' ? 'Đã thanh toán' : 'Chưa thanh toán'}
-                                                </span>
+                                                                {subOrder.payment_status === 'paid' ? 'Đã thanh toán' : 
+                                                                 subOrder.payment_status === 'pending' ? 'Chờ thanh toán' : 
+                                                                 'Chưa thanh toán'}
+                                                            </span>
                                                             <span className={`px-2 py-1 rounded-full text-xs ${
                                                                 subOrder.delivery_status === 'delivered'
                                                                     ? 'bg-green-600 text-green-100'
@@ -151,10 +179,10 @@ const Orders = () => {
                                                                         ? 'bg-blue-600 text-blue-100'
                                                                         : 'bg-orange-600 text-orange-100'
                                                             }`}>
-                                                    {subOrder.delivery_status === 'delivered' ? 'Đã giao' :
-                                                        subOrder.delivery_status === 'processing' ? 'Đang xử lý' :
-                                                            'Đang vận chuyển'}
-                                                </span>
+                                                                {subOrder.delivery_status === 'delivered' ? 'Đã giao' :
+                                                                    subOrder.delivery_status === 'processing' ? 'Đang xử lý' :
+                                                                        'Đang vận chuyển'}
+                                                            </span>
                                                         </div>
                                                     ))}
                                                 </div>
