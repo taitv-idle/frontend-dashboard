@@ -83,8 +83,24 @@ const Orders = () => {
                                                     const discount = product.discount || 0;
                                                     const itemTotal = price * quantity * (1 - discount/100);
                                                     return total + itemTotal;
-                                                }, 0) + 40000).toLocaleString('vi-VN')} ₫</span>
-                                                <span className="text-xs text-indigo-200">(Đã bao gồm phí vận chuyển 40,000₫ và giảm giá)</span>
+                                                }, 0) + (order.products?.reduce((total, product) => {
+                                                    const price = product.price || 0;
+                                                    const quantity = product.quantity || 0;
+                                                    const discount = product.discount || 0;
+                                                    const itemTotal = price * quantity * (1 - discount/100);
+                                                    return total + itemTotal;
+                                                }, 0) < 500000 ? 40000 : 0)).toLocaleString('vi-VN')} ₫</span>
+                                                <span className="text-xs text-indigo-200">
+                                                    {order.products?.reduce((total, product) => {
+                                                        const price = product.price || 0;
+                                                        const quantity = product.quantity || 0;
+                                                        const discount = product.discount || 0;
+                                                        const itemTotal = price * quantity * (1 - discount/100);
+                                                        return total + itemTotal;
+                                                    }, 0) < 500000 ? 
+                                                        '(Đã bao gồm phí vận chuyển 40,000₫ và giảm giá)' : 
+                                                        '(Miễn phí vận chuyển cho đơn hàng trên 500,000₫)'}
+                                                </span>
                                             </div>
                                         </td>
                                         <td className='px-6 py-4'>

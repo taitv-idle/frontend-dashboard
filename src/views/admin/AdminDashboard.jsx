@@ -25,6 +25,25 @@ const AdminDashboard = () => {
         newSellers = [],
     } = dashboard
 
+    // Tính toán tổng doanh thu từ các đơn hàng đã thanh toán
+    const calculateTotalRevenue = () => {
+        if (!recentOrder || recentOrder.length === 0) return 0;
+        return recentOrder
+            .filter(order => order.payment_status === 'paid' || order.payment_status === 'completed')
+            .reduce((total, order) => {
+                const orderTotal = order.products?.reduce((sum, product) => {
+                    const price = product.price || 0;
+                    const quantity = product.quantity || 0;
+                    const discount = product.discount || 0;
+                    return sum + (price * quantity * (1 - discount/100));
+                }, 0) || 0;
+                
+                // Thêm phí vận chuyển nếu đơn hàng dưới 500,000 VND
+                const shippingFee = orderTotal < 500000 ? 40000 : 0;
+                return total + orderTotal + shippingFee;
+            }, 0);
+    };
+
     useEffect(() => {
         dispatch(get_admin_dashboard_data())
     }, [dispatch])
@@ -55,7 +74,32 @@ const AdminDashboard = () => {
             },
             {
                 name: "Doanh thu",
-                data: monthlyData ? monthlyData.map(item => item.totalSales) : Array(12).fill(0)
+                data: monthlyData ? monthlyData.map(item => {
+                    // Tính doanh thu cho từng tháng
+                    const monthlyOrders = recentOrder?.filter(order => {
+                        const orderDate = new Date(order.createdAt);
+                        const orderMonth = orderDate.getMonth() + 1; // +1 because months are 1-indexed
+                        const orderYear = orderDate.getFullYear();
+                        const currentYear = new Date().getFullYear();
+                        
+                        return orderMonth === item.month && 
+                               orderYear === currentYear &&
+                               (order.payment_status === 'paid' || order.payment_status === 'completed');
+                    }) || [];
+
+                    return monthlyOrders.reduce((total, order) => {
+                        const orderTotal = order.products?.reduce((sum, product) => {
+                            const price = product.price || 0;
+                            const quantity = product.quantity || 0;
+                            const discount = product.discount || 0;
+                            return sum + (price * quantity * (1 - discount/100));
+                        }, 0) || 0;
+
+                        // Thêm phí vận chuyển nếu đơn hàng dưới 500,000 VND
+                        const shippingFee = orderTotal < 500000 ? 40000 : 0;
+                        return total + orderTotal + shippingFee;
+                    }, 0);
+                }) : Array(12).fill(0)
             },
             {
                 name: "Người bán",
@@ -314,7 +358,7 @@ const AdminDashboard = () => {
                 {/* Thẻ tổng doanh thu */}
                 <div className='flex justify-between items-center p-5 bg-gradient-to-r from-red-500 to-red-600 rounded-lg shadow-lg'>
                     <div className='flex flex-col justify-start items-start text-white'>
-                        <h2 className='text-3xl font-bold'>{totalSale?.toLocaleString()} VND</h2>
+                        <h2 className='text-3xl font-bold'>{calculateTotalRevenue().toLocaleString()} VND</h2>
                         <span className='text-sm font-medium'>Tổng doanh thu</span>
                     </div>
                     <div className='w-12 h-12 rounded-full bg-white bg-opacity-20 flex justify-center items-center text-xl'>

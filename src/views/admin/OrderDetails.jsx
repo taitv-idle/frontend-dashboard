@@ -326,7 +326,15 @@ const OrderDetails = () => {
                                 )}
                                 <div className="flex justify-between items-center">
                                     <span className="text-gray-600">Phí vận chuyển:</span>
-                                    <span className="font-medium">{formatPrice(40000)}</span>
+                                    <span className="font-medium">
+                                        {order.products?.reduce((total, product) => {
+                                            const price = product.productId?.price || 0;
+                                            const quantity = product.productId?.quantity || 0;
+                                            const discount = product.productId?.discount || 0;
+                                            const itemTotal = price * quantity * (1 - discount/100);
+                                            return total + itemTotal;
+                                        }, 0) < 500000 ? formatPrice(40000) : 'Miễn phí'}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between items-center pt-3 border-t border-gray-200">
                                     <span className="text-lg font-semibold text-gray-900">Tổng cộng:</span>
@@ -336,7 +344,13 @@ const OrderDetails = () => {
                                         const discount = product.productId?.discount || 0;
                                         const itemTotal = price * quantity * (1 - discount/100);
                                         return total + itemTotal;
-                                    }, 0) + 40000)}</span>
+                                    }, 0) + (order.products?.reduce((total, product) => {
+                                        const price = product.productId?.price || 0;
+                                        const quantity = product.productId?.quantity || 0;
+                                        const discount = product.productId?.discount || 0;
+                                        const itemTotal = price * quantity * (1 - discount/100);
+                                        return total + itemTotal;
+                                    }, 0) < 500000 ? 40000 : 0))}</span>
                                 </div>
                             </div>
 
