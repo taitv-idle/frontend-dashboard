@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   confirm_payment_request, 
@@ -22,12 +22,11 @@ const PaymentRequest = () => {
       errorMessage, 
       pendingWithdrows, 
       paymentHistory,
-      overview,
       loader 
     } = useSelector(state => state.payment);
     
     const [paymentId, setPaymentId] = useState('');
-    const [activeTab, setActiveTab] = useState('pending'); // 'pending', 'history', 'analytics'
+    const [activeTab, setActiveTab] = useState('pending'); // 'pending', 'history'
     
     // Pagination and filter states
     const [currentPage, setCurrentPage] = useState(1);
@@ -36,20 +35,81 @@ const PaymentRequest = () => {
     const [searchTimeout, setSearchTimeout] = useState(null);
 
     useEffect(() => {
-        dispatch(get_payment_request());
-        
-        if (activeTab === 'history') {
+        if (activeTab === 'pending') {
+            dispatch(get_payment_request());
+        } else if (activeTab === 'history') {
             dispatch(get_admin_payment_history({
                 page: currentPage,
                 search: searchTerm,
                 status: statusFilter
             }));
         }
-        
-        if (activeTab === 'analytics') {
-            dispatch(get_payment_overview());
-        }
     }, [dispatch, activeTab, currentPage, searchTerm, statusFilter]);
+
+    // Calculate total revenue for a seller
+    const calculateSellerRevenue = useCallback((orders) => {
+        if (!orders) return 0;
+        
+        return orders
+            .filter(order => order.payment_status === 'paid' || order.payment_status === 'completed')
+            .reduce((total, order) => {
+                // Calculate product total with discounts
+                const productTotal = order.products?.reduce((total, product) => {
+                    const price = product.price || 0;
+                    const quantity = product.quantity || 0;
+                    const discount = product.discount || 0;
+                    return total + (price * quantity * (1 - discount/100));
+                }, 0) || 0;
+
+                // Add shipping fee if total is less than 500,000
+                const shippingFee = productTotal < 500000 ? 40000 : 0;
+                
+                // Add order discount if exists
+                const orderDiscount = order.discount || 0;
+                
+                return total + productTotal + shippingFee - orderDiscount;
+            }, 0);
+    }, []);
+
+    // Calculate monthly revenue
+    const calculateMonthlyRevenue = useCallback((orders, month, year) => {
+        if (!orders) return 0;
+        
+        return orders
+            .filter(order => {
+                const orderDate = new Date(order.createdAt);
+                return (orderDate.getMonth() + 1 === month && 
+                        orderDate.getFullYear() === year &&
+                        (order.payment_status === 'paid' || order.payment_status === 'completed'));
+            })
+            .reduce((total, order) => {
+                const productTotal = order.products?.reduce((total, product) => {
+                    const price = product.price || 0;
+                    const quantity = product.quantity || 0;
+                    const discount = product.discount || 0;
+                    return total + (price * quantity * (1 - discount/100));
+                }, 0) || 0;
+
+                const shippingFee = productTotal < 500000 ? 40000 : 0;
+                const orderDiscount = order.discount || 0;
+                
+                return total + productTotal + shippingFee - orderDiscount;
+            }, 0);
+    }, []);
+
+    // Calculate growth rate
+    const calculateGrowthRate = useCallback((currentMonth, lastMonth) => {
+        if (lastMonth === 0) return 100;
+        return ((currentMonth - lastMonth) / lastMonth) * 100;
+    }, []);
+
+    // Calculate available balance for a seller
+    const calculateSellerAvailableBalance = useCallback((seller) => {
+        const totalRevenue = calculateSellerRevenue(seller.orders);
+        const totalWithdrawn = seller.withdrawnAmount || 0;
+        const totalPending = seller.pendingAmount || 0;
+        return totalRevenue - totalWithdrawn - totalPending;
+    }, [calculateSellerRevenue]);
 
     // Handle search input with debounce
     const handleSearch = (e) => {
@@ -190,6 +250,136 @@ const PaymentRequest = () => {
         }
     };
 
+    // Hàm hiển thị thông tin người bán
+    const renderSellerInfo = (request) => {
+        if (!request) return (
+            <div className="flex flex-col">
+                <span className="font-medium text-gray-900">Không xác định</span>
+                <span className="text-xs text-gray-500">N/A</span>
+            </div>
+        );
+
+        // Kiểm tra và hiển thị thông tin người bán từ cả hai cấu trúc dữ liệu
+        let shopName = 'Không xác định';
+        let email = 'N/A';
+
+        // Kiểm tra cấu trúc dữ liệu từ API payment/request
+        if (request.seller) {
+            shopName = request.seller.shopInfo?.shopName || request.seller.name || shopName;
+            email = request.seller.email || email;
+        } 
+        // Kiểm tra cấu trúc dữ liệu từ API admin/payment/history
+        else if (request.sellerName || request.shopName) {
+            shopName = request.shopName || request.sellerName || shopName;
+            email = request.sellerEmail || email;
+        }
+
+        return (
+            <div className="flex flex-col">
+                <span className="font-medium text-gray-900">{shopName}</span>
+                <span className="text-xs text-gray-500">{email}</span>
+            </div>
+        );
+    };
+
+    // Cập nhật phần hiển thị trong bảng yêu cầu chờ xử lý
+    const renderPendingTable = () => (
+        <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                    <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số tiền</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày yêu cầu</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                    {pendingWithdrows.map((request, index) => (
+                        <tr key={request._id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {index + 1}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                {renderAmount(request)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                {renderStatusBadge(request.status)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {moment(request.createdAt).format('LL')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                {request.status === 'pending' && (
+                                    <button
+                                        onClick={() => confirmRequest(request._id, request.amount)}
+                                        disabled={loader && paymentId === request._id}
+                                        className={`px-3 py-1 rounded-md text-white ${loader && paymentId === request._id ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'} transition-colors`}
+                                    >
+                                        {loader && paymentId === request._id ? (
+                                            <PropagateLoader color="#ffffff" cssOverride={overrideStyle} size={8} />
+                                        ) : (
+                                            'Xác nhận'
+                                        )}
+                                    </button>
+                                )}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+
+    // Cập nhật phần hiển thị trong bảng lịch sử thanh toán
+    const renderHistoryTable = () => (
+        <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                    <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Người bán</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số tiền</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày yêu cầu</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày xác nhận</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phương thức</th>
+                    </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                    {paymentHistory.withdrawals.map((withdrawal) => (
+                        <tr key={withdrawal._id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {withdrawal._id.substring(0, 8)}...
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                {renderSellerInfo(withdrawal)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                {renderAmount(withdrawal)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                {renderStatusBadge(withdrawal.status)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {moment(withdrawal.createdAt).format('LL')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {withdrawal.processDate 
+                                    ? moment(withdrawal.processDate).format('LL') 
+                                    : '-'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {withdrawal.transferId ? 'Stripe' : '-'}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+
     return (
         <div className="px-4 lg:px-8 py-6">
             <div className="bg-white rounded-xl shadow-md overflow-hidden">
@@ -223,16 +413,6 @@ const PaymentRequest = () => {
                         >
                             Lịch sử thanh toán
                         </button>
-                        <button
-                            onClick={() => setActiveTab('analytics')}
-                            className={`py-4 px-6 font-medium text-sm border-b-2 ${
-                                activeTab === 'analytics'
-                                    ? 'border-indigo-500 text-indigo-600'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
-                        >
-                            Thống kê doanh thu
-                        </button>
                     </nav>
                 </div>
 
@@ -244,57 +424,12 @@ const PaymentRequest = () => {
                                 Không có yêu cầu rút tiền nào đang chờ xử lý
                             </div>
                         ) : (
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số tiền</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày yêu cầu</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                    {pendingWithdrows.map((request, index) => (
-                                        <tr key={request._id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {index + 1}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                {renderAmount(request)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                {renderStatusBadge(request.status)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {moment(request.createdAt).format('LL')}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                {request.status === 'pending' && (
-                                                    <button
-                                                        onClick={() => confirmRequest(request._id, request.amount)}
-                                                        disabled={loader && paymentId === request._id}
-                                                        className={`px-3 py-1 rounded-md text-white ${loader && paymentId === request._id ? 'bg-indigo-400' : 'bg-indigo-600 hover:bg-indigo-700'} transition-colors`}
-                                                    >
-                                                        {loader && paymentId === request._id ? (
-                                                            <PropagateLoader color="#ffffff" cssOverride={overrideStyle} size={8} />
-                                                        ) : (
-                                                            'Xác nhận'
-                                                        )}
-                                                    </button>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                            renderPendingTable()
                         )}
                     </>
                 )}
 
-                {/* Payment history tab with search and filters */}
+                {/* Payment history tab */}
                 {activeTab === 'history' && (
                     <>
                         <div className="p-4 bg-white border-b border-gray-200">
@@ -343,170 +478,11 @@ const PaymentRequest = () => {
                             </div>
                         ) : (
                             <>
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Người bán</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số tiền</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày yêu cầu</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày xác nhận</th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phương thức</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {paymentHistory.withdrawals.map((withdrawal) => (
-                                                <tr key={withdrawal._id} className="hover:bg-gray-50 transition-colors">
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {withdrawal._id.substring(0, 8)}...
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                        <div className="flex flex-col">
-                                                            <span className="font-medium text-gray-900">
-                                                                {withdrawal.seller?.shopName || 'Không xác định'}
-                                                            </span>
-                                                            <span className="text-xs text-gray-500">
-                                                                {withdrawal.seller?.email || 'N/A'}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                        {renderAmount(withdrawal)}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                        {renderStatusBadge(withdrawal.status)}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {moment(withdrawal.createdAt).format('LL')}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {withdrawal.processDate 
-                                                            ? moment(withdrawal.processDate).format('LL') 
-                                                            : '-'}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {withdrawal.transferId ? 'Stripe' : '-'}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                {renderHistoryTable()}
                                 {renderPagination()}
                             </>
                         )}
                     </>
-                )}
-
-                {/* Analytics tab */}
-                {activeTab === 'analytics' && (
-                    <div className="p-6">
-                        {loader ? (
-                            <div className="text-center py-10">
-                                <PropagateLoader color="#6366f1" cssOverride={overrideStyle} size={15} />
-                            </div>
-                        ) : (
-                            <div className="space-y-8">
-                                {/* Revenue overview */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                                        <h3 className="text-lg font-medium text-gray-900">Tổng doanh thu</h3>
-                                        <p className="mt-2 text-3xl font-bold text-gray-900">
-                                            {overview.totalRevenue?.toLocaleString('vi-VN')} ₫
-                                        </p>
-                                    </div>
-                                    
-                                    <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                                        <h3 className="text-lg font-medium text-gray-900">Doanh thu tháng này</h3>
-                                        <p className="mt-2 text-3xl font-bold text-gray-900">
-                                            {overview.currentMonthRevenue?.toLocaleString('vi-VN')} ₫
-                                        </p>
-                                        <div className="mt-2 text-sm">
-                                            vs tháng trước: {renderGrowthIndicator(overview.growthRate)}
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                                        <h3 className="text-lg font-medium text-gray-900">Tháng trước</h3>
-                                        <p className="mt-2 text-3xl font-bold text-gray-900">
-                                            {overview.lastMonthRevenue?.toLocaleString('vi-VN')} ₫
-                                        </p>
-                                    </div>
-                                </div>
-                                
-                                {/* Monthly revenue chart - placeholder for actual chart implementation */}
-                                <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                                    <h3 className="text-lg font-medium text-gray-900 mb-4">Doanh thu theo tháng ({overview.yearlyData?.year || new Date().getFullYear()})</h3>
-                                    <div className="h-64 bg-gray-50 rounded flex items-center justify-center">
-                                        {overview.yearlyData?.months?.length > 0 ? (
-                                            <div className="w-full h-full px-4 py-2">
-                                                {/* Placeholder for chart - you can integrate a charting library here */}
-                                                <div className="flex items-end h-full w-full justify-between">
-                                                    {overview.yearlyData.months.map((month, index) => (
-                                                        <div key={index} className="flex flex-col items-center">
-                                                            <div 
-                                                                className="bg-indigo-500 w-8 rounded-t"
-                                                                style={{
-                                                                    height: `${Math.max(5, (month.revenue / Math.max(...overview.yearlyData.months.map(m => m.revenue))) * 100)}%`
-                                                                }}
-                                                            ></div>
-                                                            <span className="text-xs mt-1">{`T${month.month}`}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <p className="text-gray-500">Không có dữ liệu doanh thu theo tháng</p>
-                                        )}
-                                    </div>
-                                </div>
-                                
-                                {/* Top sellers */}
-                                <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                                    <h3 className="text-lg font-medium text-gray-900 mb-4">Top 5 người bán có doanh thu cao nhất</h3>
-                                    {!overview.topSellers?.length ? (
-                                        <p className="text-gray-500">Không có dữ liệu</p>
-                                    ) : (
-                                        <div className="overflow-x-auto">
-                                            <table className="min-w-full divide-y divide-gray-200">
-                                                <thead className="bg-gray-50">
-                                                    <tr>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thứ hạng</th>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Người bán</th>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doanh thu</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="bg-white divide-y divide-gray-200">
-                                                    {overview.topSellers.map((seller, index) => (
-                                                        <tr key={seller.sellerId} className="hover:bg-gray-50 transition-colors">
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                                                #{index + 1}
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                                <div className="flex flex-col">
-                                                                    <span className="font-medium text-gray-900">
-                                                                        {seller.shopName || 'Không xác định'}
-                                                                    </span>
-                                                                    <span className="text-xs text-gray-500">
-                                                                        {seller.email}
-                                                                    </span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                                {seller.total?.toLocaleString('vi-VN')} ₫
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
                 )}
             </div>
         </div>

@@ -18,13 +18,48 @@ const Payments = () => {
         loader,
         pendingWithdrows,
         successWithdrows,
-        totalAmount,
         withdrowAmount,
         pendingAmount,
         availableAmount
     } = useSelector(state => state.payment);
 
+    // Add dashboard state to get recent orders
+    const { recentOrder } = useSelector(state => state.dashboard);
+
     const [amount, setAmount] = useState(0);
+
+    // Calculate total revenue using the same method as dashboard
+    const calculateTotalRevenue = useCallback(() => {
+        if (!recentOrder) return 0;
+        
+        return recentOrder
+            .filter(order => order.payment_status === 'paid' || order.payment_status === 'completed')
+            .reduce((total, order) => {
+                // Calculate product total with discounts
+                const productTotal = order.products?.reduce((total, product) => {
+                    const price = product.price || 0;
+                    const quantity = product.quantity || 0;
+                    const discount = product.discount || 0;
+                    return total + (price * quantity * (1 - discount/100));
+                }, 0) || 0;
+
+                // Add shipping fee if total is less than 500,000
+                const shippingFee = productTotal < 500000 ? 40000 : 0;
+                
+                // Add order discount if exists
+                const orderDiscount = order.discount || 0;
+                
+                return total + productTotal + shippingFee - orderDiscount;
+            }, 0);
+    }, [recentOrder]);
+
+    // Calculate available balance
+    const calculateAvailableBalance = useCallback(() => {
+        const totalRevenue = calculateTotalRevenue();
+        const totalWithdrawn = withdrowAmount || 0;
+        const totalPending = pendingAmount || 0;
+        return totalRevenue - totalWithdrawn - totalPending;
+    }, [calculateTotalRevenue, withdrowAmount, pendingAmount]);
 
     // Xử lý scroll wheel (nếu cần sử dụng sau này)
     // const handleOnWheel = useCallback(({ deltaY }) => {
@@ -105,8 +140,8 @@ const Payments = () => {
         <div className='px-4 md:px-8 py-6'>
             {/* Thống kê tổng quan */}
             <div className='w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8'>
-                {renderStatCard('Tổng doanh thu', totalAmount, 'blue')}
-                {renderStatCard('Số dư khả dụng', availableAmount, 'green')}
+                {renderStatCard('Tổng doanh thu', calculateTotalRevenue(), 'blue')}
+                {renderStatCard('Số dư khả dụng', calculateAvailableBalance(), 'green')}
                 {renderStatCard('Đã rút', withdrowAmount, 'purple')}
                 {renderStatCard('Chờ xử lý', pendingAmount, 'yellow')}
             </div>

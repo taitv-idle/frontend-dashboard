@@ -10,6 +10,7 @@ import {
 } from '../../store/Reducers/authReducer';
 import { create_stripe_connect_account } from '../../store/Reducers/sellerReducer';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
     const [profileInfo, setProfileInfo] = useState({
@@ -27,6 +28,7 @@ const Profile = () => {
 
     const dispatch = useDispatch();
     const { userInfo, loader, successMessage, errorMessage } = useSelector(state => state.auth);
+    const navigate = useNavigate();
 
     // Xử lý thông báo
     useEffect(() => {
@@ -75,6 +77,22 @@ const Profile = () => {
     const handlePasswordSubmit = (e) => {
         e.preventDefault();
         dispatch(change_password(passwordData));
+    };
+
+    // Xử lý kích hoạt tài khoản thanh toán
+    const handleActivatePayment = async () => {
+        try {
+            const response = await dispatch(create_stripe_connect_account());
+            if (response?.payload?.url) {
+                // Chuyển hướng đến trang kích hoạt Stripe
+                window.location.href = response.payload.url;
+            } else {
+                toast.error('Không thể tạo liên kết kích hoạt tài khoản');
+            }
+        } catch (error) {
+            console.error('Payment activation error:', error);
+            toast.error(error?.message || 'Lỗi khi kích hoạt tài khoản thanh toán');
+        }
     };
 
     return (
@@ -159,20 +177,39 @@ const Profile = () => {
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500">Tài khoản thanh toán</p>
-                                    <p>
+                                    <div className="space-y-2">
                                         {userInfo.payment === 'active' ? (
-                                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                        Đã kích hoạt
-                      </span>
+                                            <div className="space-y-2">
+                                                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                                    Đã kích hoạt
+                                                </span>
+                                                <button
+                                                    onClick={handleActivatePayment}
+                                                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200"
+                                                >
+                                                    Kích hoạt lại
+                                                </button>
+                                            </div>
                                         ) : (
-                                            <button
-                                                onClick={() => dispatch(create_stripe_connect_account())}
-                                                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200"
-                                            >
-                                                Kích hoạt ngay
-                                            </button>
+                                            <div className="space-y-2">
+                                                <button
+                                                    onClick={handleActivatePayment}
+                                                    className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200"
+                                                >
+                                                    Kích hoạt ngay
+                                                </button>
+                                                <div className="text-xs text-gray-500 space-y-1">
+                                                    <p>Lưu ý:</p>
+                                                    <ul className="list-disc list-inside">
+                                                        <li>Tài khoản thanh toán sẽ được tạo với đơn vị tiền tệ USD</li>
+                                                        <li>Bạn cần cung cấp thông tin thẻ thanh toán quốc tế</li>
+                                                        <li>Hệ thống sẽ tự động chuyển đổi VND sang USD khi rút tiền</li>
+                                                        <li>Đây là tài khoản test, bạn có thể sử dụng thẻ test của Stripe</li>
+                                                    </ul>
+                                                </div>
+                                            </div>
                                         )}
-                                    </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>

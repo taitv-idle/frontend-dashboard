@@ -28,8 +28,13 @@ const SellerDashboard = () => {
         recentOrder,
         monthlyData,
         loading,
-        errorMessage
+        errorMessage,
+        availableAmount,
+        pendingWithdrows
     } = useSelector(state => state.dashboard);
+
+    // Add payment state
+    const { totalAmount } = useSelector(state => state.payment);
 
     // const { userInfo } = useSelector(state => state.auth);
     const [timeRange, setTimeRange] = useState('yearly');
@@ -60,10 +65,10 @@ const SellerDashboard = () => {
         const categories = displayData.map(data => months[data.month - 1]);
         const ordersData = displayData.map(data => data.totalOrders);
         const salesData = displayData.map(data => {
-            // Tính tổng doanh thu từ các đơn hàng đã thanh toán trong tháng
+            // Calculate monthly revenue from paid/completed orders
             const monthlyOrders = recentOrder?.filter(order => {
                 const orderDate = new Date(order.date);
-                const orderMonth = orderDate.getMonth() + 1; // +1 because months are 1-indexed in monthlyData
+                const orderMonth = orderDate.getMonth() + 1;
                 const orderYear = orderDate.getFullYear();
                 const currentYear = new Date().getFullYear();
                 
@@ -72,7 +77,20 @@ const SellerDashboard = () => {
                        (order.payment_status === 'paid' || order.payment_status === 'completed');
             }) || [];
             
-            return monthlyOrders.reduce((total, order) => total + (order.price || 0), 0);
+            return monthlyOrders.reduce((total, order) => {
+                // Calculate order total with products
+                const orderTotal = order.products?.reduce((productTotal, product) => {
+                    const price = product.price || 0;
+                    const quantity = product.quantity || 0;
+                    const discount = product.discount || 0;
+                    return productTotal + (price * quantity * (1 - discount/100));
+                }, 0) || 0;
+
+                // Add shipping fee if order total is less than 500,000
+                const shippingFee = orderTotal < 500000 ? 40000 : 0;
+                
+                return total + orderTotal + shippingFee;
+            }, 0);
         });
 
         const newSeries = [
@@ -167,27 +185,41 @@ const SellerDashboard = () => {
         }
     }, [errorMessage]);
 
-    const StatCard = ({ title, value, icon: Icon, color, bgColor, suffix = '', isCurrency = false }) => {
-        // Calculate total revenue for paid/completed orders with shipping fees
-        const calculateTotalRevenue = () => {
-            if (!recentOrder) return 0;
-            
-            return recentOrder
-                .filter(order => order.payment_status === 'paid' || order.payment_status === 'completed')
-                .reduce((total, order) => {
-                    // Calculate order total with products
-                    const orderTotal = order.products?.reduce((productTotal, product) => {
-                        const price = product.price || 0;
-                        const quantity = product.quantity || 0;
-                        const discount = product.discount || 0;
-                        return productTotal + (price * quantity * (1 - discount/100));
-                    }, 0) || 0;
+    const calculateOrderTotal = (order) => {
+        // Calculate product total with discounts
+        const productTotal = order.products?.reduce((total, product) => {
+            const price = product.price || 0;
+            const quantity = product.quantity || 0;
+            const discount = product.discount || 0;
+            return total + (price * quantity * (1 - discount/100));
+        }, 0) || 0;
 
-                    // Add shipping fee if order total is less than 500,000
-                    const shippingFee = orderTotal < 500000 ? 40000 : 0;
-                    
-                    return total + orderTotal + shippingFee;
-                }, 0);
+        // Add shipping fee if total is less than 500,000
+        const shippingFee = productTotal < 500000 ? 40000 : 0;
+        
+        // Add order discount if exists
+        const orderDiscount = order.discount || 0;
+        
+        return productTotal + shippingFee - orderDiscount;
+    };
+
+    const StatCard = ({ title, value, icon: Icon, color, bgColor, suffix = '', isCurrency = false }) => {
+        // Get the correct value based on the title
+        const getDisplayValue = () => {
+            switch (title) {
+                case 'Tổng doanh thu':
+                    return recentOrder
+                        ?.filter(order => order.payment_status === 'paid' || order.payment_status === 'completed')
+                        .reduce((total, order) => total + calculateOrderTotal(order), 0) || 0;
+                case 'Số dư khả dụng':
+                    return availableAmount || 0;
+                case 'Đã rút':
+                    return totalAmount - availableAmount;
+                case 'Chờ xử lý':
+                    return pendingWithdrows?.reduce((total, withdrawal) => total + (withdrawal.amount || 0), 0) || 0;
+                default:
+                    return value || 0;
+            }
         };
 
         return (
@@ -196,7 +228,7 @@ const SellerDashboard = () => {
                     <p className="text-sm font-medium text-gray-600">{title}</p>
                     <h3 className="text-2xl font-bold text-gray-800">
                         {isCurrency 
-                            ? `${Number(title === 'Tổng doanh thu' ? calculateTotalRevenue() : value || 0).toLocaleString('vi-VN')}${suffix}`
+                            ? `${Number(getDisplayValue()).toLocaleString('vi-VN')}${suffix}`
                             : typeof value === 'number' 
                                 ? `${value.toLocaleString('vi-VN')}${suffix}`
                                 : value}
@@ -291,19 +323,6 @@ const SellerDashboard = () => {
         );
     };
 
-    const calculateOrderTotal = (order) => {
-        const orderTotal = order.products?.reduce((total, product) => {
-            const price = product.price || 0;
-            const quantity = product.quantity || 0;
-            const discount = product.discount || 0;
-            return total + (price * quantity * (1 - discount/100));
-        }, 0) || 0;
-
-        // Add shipping fee if order total is less than 500,000
-        const shippingFee = orderTotal < 500000 ? 40000 : 0;
-        return orderTotal + shippingFee;
-    };
-
     return (
         <div className="px-4 md:px-6 py-6">
             <div className="flex justify-between items-center mb-6">
@@ -329,25 +348,31 @@ const SellerDashboard = () => {
                     isCurrency={true}
                 />
                 <StatCard
-                    title="Sản phẩm"
-                    value={totalProduct || 0}
-                    icon={MdProductionQuantityLimits}
-                    color="bg-purple-600"
-                    bgColor="bg-purple-50"
-                />
-                <StatCard
-                    title="Tổng đơn hàng"
-                    value={totalOrder || 0}
-                    icon={FaCartShopping}
+                    title="Số dư khả dụng"
+                    value={availableAmount}
+                    icon={MdCurrencyExchange}
                     color="bg-green-600"
                     bgColor="bg-green-50"
+                    suffix=" ₫"
+                    isCurrency={true}
                 />
                 <StatCard
-                    title="Đơn hàng chờ"
-                    value={totalPendingOrder || 0}
-                    icon={FaBoxOpen}
+                    title="Đã rút"
+                    value={totalAmount - availableAmount}
+                    icon={MdCurrencyExchange}
+                    color="bg-purple-600"
+                    bgColor="bg-purple-50"
+                    suffix=" ₫"
+                    isCurrency={true}
+                />
+                <StatCard
+                    title="Chờ xử lý"
+                    value={pendingWithdrows?.reduce((total, withdrawal) => total + (withdrawal.amount || 0), 0) || 0}
+                    icon={MdCurrencyExchange}
                     color="bg-yellow-600"
                     bgColor="bg-yellow-50"
+                    suffix=" ₫"
+                    isCurrency={true}
                 />
             </div>
 
