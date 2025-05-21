@@ -39,6 +39,7 @@ const EditProduct = () => {
     const [loading, setLoading] = useState(false);
     const [newColor, setNewColor] = useState('');
     const [newTag, setNewTag] = useState('');
+    const [newSize, setNewSize] = useState('');
 
     // Predefined sizes
     const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
@@ -78,104 +79,49 @@ const EditProduct = () => {
     useEffect(() => {
         if (product) {
             console.log('Product data received:', product);
-            // Log để kiểm tra kiểu dữ liệu của các trường arrays
-            console.log('Size type:', typeof product.size, 'Value:', product.size);
-            console.log('Color type:', typeof product.color, 'Value:', product.color);
-            console.log('Tags type:', typeof product.tags, 'Value:', product.tags);
             
             // Xử lý nội dung HTML từ API
             const descriptionContent = product.description || '';
-            console.log('Setting initial description content:', descriptionContent);
-            
-            // Đảm bảo nội dung là HTML hợp lệ
             const sanitizedContent = descriptionContent.trim() ? descriptionContent : '<p></p>';
             setEditorContent(sanitizedContent);
             
-            // Hàm xử lý dữ liệu mảng, xử lý riêng từng trường hợp cụ thể
+            // Xử lý dữ liệu mảng
             const parseArrayData = (field) => {
-                console.log('Raw data to parse:', field);
+                if (!field) return [];
                 
-                // Trường hợp dữ liệu đã là mảng có phần tử, như từ API trả về ['["[\\"XXXL\\",\\"XXL\\",...]"]']
-                if (Array.isArray(field) && field.length > 0) {
-                    try {
-                        // Lấy phần tử đầu tiên (chuỗi)
-                        const outerString = field[0];
-                        console.log('Outer string:', outerString);
-                        
-                        // Parse chuỗi bên ngoài
-                        const firstParse = JSON.parse(outerString);
-                        console.log('First parse result:', firstParse);
-                        
-                        // Nếu kết quả là mảng có 1 phần tử chuỗi
-                        if (Array.isArray(firstParse) && firstParse.length > 0) {
-                            try {
-                                // Trường hợp tags: ['["Áo","Quần"]'] - đơn giản hơn
-                                if (typeof firstParse[0] === 'string' && !firstParse[0].includes('\\')) {
-                                    return firstParse;
-                                }
-                                
-                                // Trường hợp size/color: ['["[\\"XXXL\\",\\"XXL\\",...]"]'] - cần parse thêm
-                                const secondParse = JSON.parse(firstParse[0]);
-                                console.log('Second parse result:', secondParse);
-                                
-                                if (Array.isArray(secondParse)) {
-                                    return secondParse;
-                                }
-                            } catch (e) {
-                                console.error('Error in nested parse:', e);
-                                return firstParse; // Trả về kết quả parse đầu tiên nếu parse lần hai lỗi
-                            }
-                        }
-                        return firstParse;
-                    } catch (e) {
-                        console.error('Error parsing array data:', e);
-                        return [];
-                    }
-                }
-                
-                // Nếu trường là string
-                if (typeof field === 'string') {
-                    try {
+                try {
+                    // Nếu là string, thử parse JSON
+                    if (typeof field === 'string') {
                         const parsed = JSON.parse(field);
                         return Array.isArray(parsed) ? parsed : [];
-                    } catch (e) {
-                        console.error('Error parsing string data:', e);
-                        return [];
                     }
+                    
+                    // Nếu là mảng, trả về trực tiếp
+                    if (Array.isArray(field)) {
+                        return field;
+                    }
+                    
+                    return [];
+                } catch (e) {
+                    console.error('Error parsing array data:', e);
+                    return [];
                 }
-                
-                // Nếu đã là mảng đơn giản
-                if (Array.isArray(field)) {
-                    return field;
-                }
-                
-                // Fallback
-                return [];
             };
             
             // Xử lý và set state
-            setState(prev => {
-                const parsedSize = parseArrayData(product.size);
-                const parsedColor = parseArrayData(product.color);
-                const parsedTags = parseArrayData(product.tags);
-                
-                console.log('Parsed size for edit:', parsedSize);
-                console.log('Parsed color for edit:', parsedColor);
-                console.log('Parsed tags for edit:', parsedTags);
-                
-                return {
-                    ...prev,
-                    name: product.name || "",
-                    description: sanitizedContent,
-                    discount: product.discount || "",
-                    price: product.price || "",
-                    brand: product.brand || "",
-                    stock: product.stock || "",
-                    size: parsedSize,
-                    color: parsedColor,
-                    tags: parsedTags
-                };
-            });
+            setState(prev => ({
+                ...prev,
+                name: product.name || "",
+                description: sanitizedContent,
+                discount: product.discount || "",
+                price: product.price || "",
+                brand: product.brand || "",
+                stock: product.stock || "",
+                size: parseArrayData(product.size),
+                color: parseArrayData(product.color),
+                tags: parseArrayData(product.tags)
+            }));
+            
             setCategory(product.category || "");
             setImageShow(product.images || []);
             setLoading(false);
@@ -294,6 +240,31 @@ const EditProduct = () => {
         setState(prev => ({
             ...prev,
             tags: prev.tags.filter(tag => tag !== tagToRemove)
+        }));
+    };
+
+    // Thêm hàm xử lý thêm kích thước tùy chỉnh
+    const handleAddSize = () => {
+        if (newSize.trim() && !state.size.includes(newSize.trim())) {
+            setState(prev => ({
+                ...prev,
+                size: [...prev.size, newSize.trim()]
+            }));
+            setNewSize('');
+        }
+    };
+
+    const handleSizeKeyPress = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleAddSize();
+        }
+    };
+
+    const handleRemoveSize = (sizeToRemove) => {
+        setState(prev => ({
+            ...prev,
+            size: prev.size.filter(size => size !== sizeToRemove)
         }));
     };
 
@@ -498,21 +469,61 @@ const EditProduct = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-700">Kích Thước</label>
-                            <div className="flex flex-wrap gap-2">
-                                {availableSizes.map((size) => (
+                            <div className="mb-4">
+                                <p className="text-sm text-gray-600 mb-2">Kích thước mặc định:</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {availableSizes.map((size) => (
+                                        <button
+                                            key={size}
+                                            type="button"
+                                            onClick={() => handleSizeChange(size)}
+                                            className={`px-3 py-1 rounded-full border ${
+                                                state.size.includes(size)
+                                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                                    : 'border-gray-300 text-gray-700 hover:border-indigo-500'
+                                            }`}
+                                        >
+                                            {size}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="mb-4">
+                                <p className="text-sm text-gray-600 mb-2">Kích thước tùy chỉnh:</p>
+                                <div className="flex gap-2 mb-2">
+                                    <input
+                                        type="text"
+                                        value={newSize}
+                                        onChange={(e) => setNewSize(e.target.value)}
+                                        onKeyPress={handleSizeKeyPress}
+                                        placeholder="Nhập kích thước tùy chỉnh"
+                                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                    />
                                     <button
-                                        key={size}
                                         type="button"
-                                        onClick={() => handleSizeChange(size)}
-                                        className={`px-3 py-1 rounded-full border ${
-                                            state.size.includes(size)
-                                                ? 'bg-indigo-600 text-white border-indigo-600'
-                                                : 'border-gray-300 text-gray-700 hover:border-indigo-500'
-                                        }`}
+                                        onClick={handleAddSize}
+                                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                                     >
-                                        {size}
+                                        Thêm
                                     </button>
-                                ))}
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {state.size.filter(size => !availableSizes.includes(size)).map((size, index) => (
+                                        <div
+                                            key={index}
+                                            className="group relative px-3 py-1 rounded-full border border-gray-300 bg-white"
+                                        >
+                                            <span>{size}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveSize(size)}
+                                                className="absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <IoMdCloseCircle size={16} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 

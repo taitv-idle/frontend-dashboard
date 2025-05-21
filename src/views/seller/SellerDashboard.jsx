@@ -167,23 +167,47 @@ const SellerDashboard = () => {
         }
     }, [errorMessage]);
 
-    const StatCard = ({ title, value, icon: Icon, color, bgColor, suffix = '', isCurrency = false }) => (
-        <div className={`p-5 rounded-lg shadow-sm flex justify-between items-center ${bgColor}`}>
-            <div>
-                <p className="text-sm font-medium text-gray-600">{title}</p>
-                <h3 className="text-2xl font-bold text-gray-800">
-                    {isCurrency 
-                        ? `${Number(value || 0).toLocaleString('vi-VN')}${suffix}`
-                        : typeof value === 'number' 
-                            ? `${value.toLocaleString('vi-VN')}${suffix}`
-                            : value}
-                </h3>
+    const StatCard = ({ title, value, icon: Icon, color, bgColor, suffix = '', isCurrency = false }) => {
+        // Calculate total revenue for paid/completed orders with shipping fees
+        const calculateTotalRevenue = () => {
+            if (!recentOrder) return 0;
+            
+            return recentOrder
+                .filter(order => order.payment_status === 'paid' || order.payment_status === 'completed')
+                .reduce((total, order) => {
+                    // Calculate order total with products
+                    const orderTotal = order.products?.reduce((productTotal, product) => {
+                        const price = product.price || 0;
+                        const quantity = product.quantity || 0;
+                        const discount = product.discount || 0;
+                        return productTotal + (price * quantity * (1 - discount/100));
+                    }, 0) || 0;
+
+                    // Add shipping fee if order total is less than 500,000
+                    const shippingFee = orderTotal < 500000 ? 40000 : 0;
+                    
+                    return total + orderTotal + shippingFee;
+                }, 0);
+        };
+
+        return (
+            <div className={`p-5 rounded-lg shadow-sm flex justify-between items-center ${bgColor}`}>
+                <div>
+                    <p className="text-sm font-medium text-gray-600">{title}</p>
+                    <h3 className="text-2xl font-bold text-gray-800">
+                        {isCurrency 
+                            ? `${Number(title === 'Tổng doanh thu' ? calculateTotalRevenue() : value || 0).toLocaleString('vi-VN')}${suffix}`
+                            : typeof value === 'number' 
+                                ? `${value.toLocaleString('vi-VN')}${suffix}`
+                                : value}
+                    </h3>
+                </div>
+                <div className={`p-3 rounded-full ${color} text-white`}>
+                    <Icon size={24} />
+                </div>
             </div>
-            <div className={`p-3 rounded-full ${color} text-white`}>
-                <Icon size={24} />
-            </div>
-        </div>
-    );
+        );
+    };
 
     // const MessageItem = ({ message }) => (
     //     <li className="mb-4 ml-6">
@@ -265,6 +289,19 @@ const SellerDashboard = () => {
                 {config.text}
             </span>
         );
+    };
+
+    const calculateOrderTotal = (order) => {
+        const orderTotal = order.products?.reduce((total, product) => {
+            const price = product.price || 0;
+            const quantity = product.quantity || 0;
+            const discount = product.discount || 0;
+            return total + (price * quantity * (1 - discount/100));
+        }, 0) || 0;
+
+        // Add shipping fee if order total is less than 500,000
+        const shippingFee = orderTotal < 500000 ? 40000 : 0;
+        return orderTotal + shippingFee;
     };
 
     return (
@@ -401,7 +438,7 @@ const SellerDashboard = () => {
                             <span className="font-medium text-gray-800">
                                 {recentOrder
                                     ?.filter(order => order.payment_status === 'paid' || order.payment_status === 'completed')
-                                    .reduce((total, order) => total + (order.price || 0), 0)
+                                    .reduce((total, order) => total + calculateOrderTotal(order), 0)
                                     .toLocaleString('vi-VN')} ₫
                             </span>
                         </div>
@@ -413,7 +450,7 @@ const SellerDashboard = () => {
                             <span className="font-medium text-gray-800">
                                 {recentOrder
                                     ?.filter(order => order.payment_status === 'pending')
-                                    .reduce((total, order) => total + (order.price || 0), 0)
+                                    .reduce((total, order) => total + calculateOrderTotal(order), 0)
                                     .toLocaleString('vi-VN')} ₫
                             </span>
                         </div>
@@ -425,7 +462,7 @@ const SellerDashboard = () => {
                             <span className="font-medium text-gray-800">
                                 {recentOrder
                                     ?.filter(order => order.payment_status === 'unpaid')
-                                    .reduce((total, order) => total + (order.price || 0), 0)
+                                    .reduce((total, order) => total + calculateOrderTotal(order), 0)
                                     .toLocaleString('vi-VN')} ₫
                             </span>
                         </div>
@@ -488,7 +525,7 @@ const SellerDashboard = () => {
                                             moment(order.date).isSame(moment(), 'day') &&
                                             (order.payment_status === 'paid' || order.payment_status === 'completed')
                                         )
-                                        .reduce((total, order) => total + (order.price || 0), 0)
+                                        .reduce((total, order) => total + calculateOrderTotal(order), 0)
                                         .toLocaleString('vi-VN')} ₫
                                 </span>
                             </div>
@@ -500,7 +537,7 @@ const SellerDashboard = () => {
                                             moment(order.date).isSame(moment(), 'day') &&
                                             (order.payment_status === 'pending' || order.payment_status === 'unpaid')
                                         )
-                                        .reduce((total, order) => total + (order.price || 0), 0)
+                                        .reduce((total, order) => total + calculateOrderTotal(order), 0)
                                         .toLocaleString('vi-VN')} ₫
                                 </span>
                             </div>
@@ -525,7 +562,7 @@ const SellerDashboard = () => {
                                             moment(order.date).isSame(moment(), 'week') &&
                                             (order.payment_status === 'paid' || order.payment_status === 'completed')
                                         )
-                                        .reduce((total, order) => total + (order.price || 0), 0)
+                                        .reduce((total, order) => total + calculateOrderTotal(order), 0)
                                         .toLocaleString('vi-VN')} ₫
                                 </span>
                             </div>
@@ -537,7 +574,7 @@ const SellerDashboard = () => {
                                             moment(order.date).isSame(moment(), 'week') &&
                                             (order.payment_status === 'pending' || order.payment_status === 'unpaid')
                                         )
-                                        .reduce((total, order) => total + (order.price || 0), 0)
+                                        .reduce((total, order) => total + calculateOrderTotal(order), 0)
                                         .toLocaleString('vi-VN')} ₫
                                 </span>
                             </div>
@@ -562,7 +599,7 @@ const SellerDashboard = () => {
                                             moment(order.date).isSame(moment(), 'month') &&
                                             (order.payment_status === 'paid' || order.payment_status === 'completed')
                                         )
-                                        .reduce((total, order) => total + (order.price || 0), 0)
+                                        .reduce((total, order) => total + calculateOrderTotal(order), 0)
                                         .toLocaleString('vi-VN')} ₫
                                 </span>
                             </div>
@@ -574,7 +611,7 @@ const SellerDashboard = () => {
                                             moment(order.date).isSame(moment(), 'month') &&
                                             (order.payment_status === 'pending' || order.payment_status === 'unpaid')
                                         )
-                                        .reduce((total, order) => total + (order.price || 0), 0)
+                                        .reduce((total, order) => total + calculateOrderTotal(order), 0)
                                         .toLocaleString('vi-VN')} ₫
                                 </span>
                             </div>
@@ -618,7 +655,7 @@ const SellerDashboard = () => {
                         {recentOrder?.slice(0, 5).map((order, i) => (
                             <tr key={i} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                                 <td className="py-3 px-4 font-medium text-blue-600">#{order._id?.slice(0, 8) || ''}...</td>
-                                <td className="py-3 px-4">{order.price?.toLocaleString('vi-VN')} ₫</td>
+                                <td className="py-3 px-4">{calculateOrderTotal(order).toLocaleString('vi-VN')} ₫</td>
                                 <td className="py-3 px-4">
                                     {getStatusBadge(order.payment_status, 'payment')}
                                 </td>
